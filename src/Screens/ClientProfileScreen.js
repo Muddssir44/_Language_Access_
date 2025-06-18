@@ -2860,3 +2860,23 @@ const styles = StyleSheet.create({
 });
 
 export default ClientProfileScreen;
+
+// Export reusable components for InterpreterProfileScreen
+export {
+    MyProfileScreen,
+    ChangePasswordScreen,
+    CardRegistrationScreen,
+    CallHistoryScreen,
+    PaymentHistoryScreen,
+    LanguageCoverageScreen,
+    AboutScreen,
+    TermsScreen,
+    PrivacyPolicyScreen,
+    ContactUsScreen,
+    VersionScreen,
+    SignOutConfirmationScreen,
+    DeleteAccountScreen,
+    DynamicHeader,
+    ProfileListItem,
+    SectionHeader
+};

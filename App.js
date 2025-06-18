@@ -1,20 +1,36 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import ClientHomeScreen from './src/Screens/ClientHomeScreen';
+import PostJobScreen from './src/Screens/PostJobScreen';
+import FindInterpreterScreen from './src/Screens/FindInterpreterScreen';
+import MessagesScreen from './src/Screens/MessagesScreen';
+import  ClientProfileScreen  from './src/Screens/ClientProfileScreen';
 
-export default function App() {
+
+
+
+
+const Stack = createNativeStackNavigator();
+function App() {
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+
+
+
+        {/* <Stack.Screen name="ClientHomeScreen" component={ClientHomeScreen} /> */}
+        {/* <Stack.Screen name="FindInterpreterScreen" component={FindInterpreterScreen} /> */}
+        {/* <Stack.Screen name="PostJobScreen" component={PostJobScreen} /> */}
+        {/* <Stack.Screen name="MessagesScreen" component={MessagesScreen} /> */}
+        <Stack.Screen name="ClientProfileScreen" component={ClientProfileScreen} />
+
+
+
+
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+export default App;

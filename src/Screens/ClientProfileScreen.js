@@ -1650,12 +1650,33 @@ const MainProfileScreen = ({ onNavigate, onBack }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const scrollY = useRef(new Animated.Value(0)).current;
 
+    // Dynamic user data state - this would typically come from your backend/API
+    const [userData, setUserData] = useState({
+        firstName: 'John',
+        lastName: 'Anderson',
+        email: 'john.anderson@company.com',
+        company: 'Tech Solutions Inc.',
+        jobTitle: 'Operations Manager',
+        profileCompletion: 85,
+        isVerified: true,
+        memberSince: '2023',
+        totalCalls: 24,
+        rating: 4.8,
+        avatar: null, // Could be an image URL from backend
+        status: 'active', // active, busy, offline
+        lastActive: 'Now'
+    });
+
     useEffect(() => {
         Animated.timing(fadeAnim, {
             toValue: 1,
             duration: 600,
             useNativeDriver: false,
         }).start();
+
+        // Simulate fetching user data from backend
+        // In real app, you'd call your API here
+        // fetchUserProfile().then(setUserData);
     }, []);
 
     const handleSignOut = () => {
@@ -1667,6 +1688,21 @@ const MainProfileScreen = ({ onNavigate, onBack }) => {
                 { text: 'Sign Out', style: 'destructive', onPress: () => onNavigate('signOut') }
             ]
         );
+    };
+
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'active': return theme.colors.success;
+            case 'busy': return theme.colors.warning;
+            case 'offline': return theme.colors.text.light;
+            default: return theme.colors.text.light;
+        }
+    };
+
+    const getCompletionColor = (percentage) => {
+        if (percentage >= 80) return theme.colors.success;
+        if (percentage >= 60) return theme.colors.warning;
+        return theme.colors.error;
     };
 
     return (
@@ -1688,18 +1724,124 @@ const MainProfileScreen = ({ onNavigate, onBack }) => {
                     { useNativeDriver: false }
                 )}
             >
-                {/* User Profile Header */}
-                <View style={styles.profileHeader}>
-                    <View style={styles.avatarContainer}>
-                        <View style={styles.avatar}>
-                            <Feather name="user" size={40} color={theme.colors.text.white} />
+                {/* Enhanced User Profile Header */}
+                <View style={styles.enhancedProfileHeader}>
+                    {/* Background Gradient Effect */}
+                    <View style={styles.profileHeaderBackground} />
+
+                    <View style={styles.profileHeaderContent}>
+                        {/* Left Section - Avatar and Basic Info */}
+                        <View style={styles.profileHeaderLeft}>
+                            <View style={styles.compactAvatarContainer}>
+                                <View style={styles.compactAvatar}>
+                                    {userData.avatar ? (
+                                        <Image source={{ uri: userData.avatar }} style={styles.avatarImage} />
+                                    ) : (
+                                        <Text style={styles.avatarText}>
+                                            {userData.firstName.charAt(0)}{userData.lastName.charAt(0)}
+                                        </Text>
+                                    )}
+                                </View>
+
+                                {/* Status Indicator */}
+                                <View style={[styles.statusIndicator, { backgroundColor: getStatusColor(userData.status) }]} />
+
+                                {/* Edit Avatar Button */}
+                                <TouchableOpacity style={styles.compactEditAvatarButton}>
+                                    <Feather name="camera" size={12} color={theme.colors.text.white} />
+                                </TouchableOpacity>
+                            </View>
+
+                            <View style={styles.profileBasicInfo}>
+                                <View style={styles.nameContainer}>
+                                    <Text style={styles.compactProfileName}>
+                                        {userData.firstName} {userData.lastName}
+                                    </Text>
+                                    {userData.isVerified && (
+                                        <Feather name="check-circle" size={16} color={theme.colors.success} style={styles.verifiedIcon} />
+                                    )}
+                                </View>
+                                <Text style={styles.compactProfileEmail} numberOfLines={1}>
+                                    {userData.email}
+                                </Text>
+                                <Text style={styles.compactProfileCompany} numberOfLines={1}>
+                                    {userData.jobTitle} • {userData.company}
+                                </Text>
+                            </View>
                         </View>
-                        <TouchableOpacity style={styles.editAvatarButton}>
-                            <Feather name="camera" size={16} color={theme.colors.text.white} />
-                        </TouchableOpacity>
+
+                        {/* Right Section - Stats and Actions */}
+                        <View style={styles.profileHeaderRight}>
+                            {/* Profile Completion */}
+                            <View style={styles.profileCompletionContainer}>
+                                <View style={styles.profileCompletionHeader}>
+                                    <Text style={styles.completionLabel}>Profile</Text>
+                                    <Text style={[styles.completionPercentage, { color: getCompletionColor(userData.profileCompletion) }]}>
+                                        {userData.profileCompletion}%
+                                    </Text>
+                                </View>
+                                <View style={styles.progressBarContainer}>
+                                    <View style={styles.progressBarBackground} />
+                                    <View
+                                        style={[
+                                            styles.progressBarFill,
+                                            {
+                                                width: `${userData.profileCompletion}%`,
+                                                backgroundColor: getCompletionColor(userData.profileCompletion)
+                                            }
+                                        ]}
+                                    />
+                                </View>
+                            </View>
+
+                            {/* Quick Stats */}
+                            <View style={styles.quickStats}>
+                                <View style={styles.statItem}>
+                                    <Text style={styles.statValue}>{userData.totalCalls}</Text>
+                                    <Text style={styles.statLabel}>Calls</Text>
+                                </View>
+                                <View style={styles.statDivider} />
+                                <View style={styles.statItem}>
+                                    <View style={styles.ratingContainer}>
+                                        <Text style={styles.statValue}>{userData.rating}</Text>
+                                        <Feather name="star" size={12} color={theme.colors.accent} />
+                                    </View>
+                                    <Text style={styles.statLabel}>Rating</Text>
+                                </View>
+                                <View style={styles.statDivider} />
+                                <View style={styles.statItem}>
+                                    <Text style={styles.statValue}>{userData.memberSince}</Text>
+                                    <Text style={styles.statLabel}>Since</Text>
+                                </View>
+                            </View>
+
+                            {/* Quick Actions */}
+                            <View style={styles.quickActions}>
+                                <TouchableOpacity
+                                    style={styles.quickActionButton}
+                                    onPress={() => onNavigate('myProfile')}
+                                >
+                                    <Feather name="edit-3" size={14} color={theme.colors.primary} />
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.quickActionButton}
+                                    onPress={() => onNavigate('callHistory')}
+                                >
+                                    <Feather name="phone" size={14} color={theme.colors.secondary} />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
                     </View>
-                    <Text style={styles.profileName}>John Anderson</Text>
-                    <Text style={styles.profileEmail}>john.anderson@company.com</Text>
+
+                    {/* Last Active Status */}
+                    <View style={styles.lastActiveContainer}>
+                        <View style={styles.lastActiveContent}>
+                            <Feather name="clock" size={12} color={theme.colors.text.light} />
+                            <Text style={styles.lastActiveText}>
+                                Last active: {userData.lastActive}
+                            </Text>
+                        </View>
+                    </View>
                 </View>
 
                 {/* Profile Settings Section */}
@@ -2878,6 +3020,218 @@ const styles = StyleSheet.create({
     // Bottom Spacing
     bottomSpacing: {
         height: theme.spacing.xl,
+    },
+
+    // Enhanced User Profile Styles
+    enhancedProfileHeader: {
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.lg,
+        marginBottom: theme.spacing.md,
+        overflow: 'hidden',
+        elevation: 3,
+        shadowColor: theme.colors.shadow,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    profileHeaderBackground: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '75%',
+        backgroundColor: theme.colors.primary,
+        borderTopLeftRadius: theme.borderRadius.lg,
+        borderTopRightRadius: theme.borderRadius.lg,
+    },
+    profileHeaderContent: {
+        flexDirection: 'row',
+        padding: theme.spacing.lg,
+        alignItems: 'flex-start',
+        minHeight: 120,
+    },
+    profileHeaderLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    compactAvatarContainer: {
+        position: 'relative',
+        marginRight: theme.spacing.md,
+    },
+    compactAvatar: {
+        width: 70,
+        height: 70,
+        borderRadius: 35,
+        backgroundColor: theme.colors.primaryLight,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 3,
+        borderColor: theme.colors.surface,
+        overflow: 'hidden',
+    },
+    avatarImage: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 32,
+    },
+    avatarText: {
+        fontSize: 24,
+        fontWeight: '700',
+        color: theme.colors.text.white,
+    },
+    statusIndicator: {
+        position: 'absolute',
+        bottom: 2,
+        right: 2,
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        borderWidth: 2,
+        borderColor: theme.colors.surface,
+    },
+    compactEditAvatarButton: {
+        position: 'absolute',
+        top: -5,
+        right: -5,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: theme.colors.accent,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: theme.colors.surface,
+    },
+    profileBasicInfo: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+    nameContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: theme.spacing.xs,
+    },
+    compactProfileName: {
+        ...theme.typography.h3,
+        color: theme.colors.text.white,
+        fontWeight: '700',
+    },
+    verifiedIcon: {
+        marginLeft: theme.spacing.xs,
+    },
+    compactProfileEmail: {
+        ...theme.typography.caption,
+        color: theme.colors.text.white,
+        opacity: 0.9,
+        marginBottom: 2,
+    },
+    compactProfileCompany: {
+        ...theme.typography.caption,
+        color: theme.colors.text.white,
+        opacity: 0.8,
+    },
+    profileHeaderRight: {
+        alignItems: 'flex-end',
+        justifyContent: 'space-between',
+        minHeight: 70,
+    },
+    profileCompletionContainer: {
+        alignItems: 'flex-end',
+        marginBottom: theme.spacing.sm,
+        minWidth: 80,
+    },
+    profileCompletionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: theme.spacing.xs,
+    },
+    completionLabel: {
+        ...theme.typography.small,
+        color: theme.colors.text.white,
+        opacity: 0.9,
+        marginRight: theme.spacing.xs,
+    },
+    completionPercentage: {
+        ...theme.typography.bodyMedium,
+        fontWeight: '700',
+    },
+    progressBarContainer: {
+        width: 60,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        overflow: 'hidden',
+    },
+    progressBarBackground: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    progressBarFill: {
+        height: '100%',
+        borderRadius: 3,
+    },
+    quickStats: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: theme.spacing.sm,
+    },
+    statItem: {
+        alignItems: 'center',
+        minWidth: 35,
+    },
+    statValue: {
+        ...theme.typography.small,
+        color: theme.colors.text.white,
+        fontWeight: '600',
+        fontSize: 14,
+    },
+    statLabel: {
+        ...theme.typography.small,
+        color: theme.colors.text.white,
+        opacity: 0.8,
+        fontSize: 10,
+    },
+    statDivider: {
+        width: 1,
+        height: 20,
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        marginHorizontal: theme.spacing.sm,
+    },
+    ratingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    quickActions: {
+        flexDirection: 'row',
+        gap: theme.spacing.xs,
+    },
+    quickActionButton: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    lastActiveContainer: {
+        backgroundColor: theme.colors.surface,
+        paddingHorizontal: theme.spacing.lg,
+        paddingBottom: theme.spacing.md,
+        paddingTop: theme.spacing.xs,
+    },
+    lastActiveContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    lastActiveText: {
+        ...theme.typography.small,
+        color: theme.colors.text.secondary,
+        marginLeft: theme.spacing.xs,
     },
 });
 

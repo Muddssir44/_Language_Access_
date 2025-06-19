@@ -18,6 +18,7 @@ import {
     Switch,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import DynamicHeader from '../Components/DynamicHeader';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -68,69 +69,9 @@ const theme = {
     },
 };
 
-// Reusable Dynamic Header Component
-const DynamicHeader = ({
-    type = 'back',
-    title = 'Profile',
-    onBack,
-    onBell,
-    onProfile,
-    onFavorite,
-    showFavorite = false
-}) => {
-    const fadeAnim = useRef(new Animated.Value(0)).current;
-
-    useEffect(() => {
-        Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: false,
-        }).start();
-    }, []);
-
-    const renderHeaderContent = () => {
-        switch (type) {
-            case 'home':
-                return (
-                    <>
-                        <Text style={styles.headerTitle}>LanguageAccess</Text>
-                        <View style={styles.headerActions}>
-                            <TouchableOpacity style={styles.headerButton} onPress={onBell} activeOpacity={0.7}>
-                                <Feather name="bell" size={24} color={theme.colors.text.primary} />
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.headerButton} onPress={onProfile} activeOpacity={0.7}>
-                                <Feather name="user" size={24} color={theme.colors.text.primary} />
-                            </TouchableOpacity>
-                        </View>
-                    </>
-                );
-            case 'back':
-                return (
-                    <>
-                        <View style={styles.headerLeft}>
-                            <TouchableOpacity style={styles.headerButton} onPress={onBack} activeOpacity={0.7}>
-                                <Feather name="chevron-left" size={24} color={theme.colors.text.primary} />
-                            </TouchableOpacity>
-                            <Text style={styles.headerTitleSecondary}>{title}</Text>
-                        </View>
-                        {showFavorite && (
-                            <TouchableOpacity style={styles.headerButton} onPress={onFavorite} activeOpacity={0.7}>
-                                <Feather name="star" size={24} color={theme.colors.text.primary} />
-                            </TouchableOpacity>
-                        )}
-                    </>
-                );
-            default:
-                return <Text style={styles.headerTitleSecondary}>{title}</Text>;
-        }
-    };
-
-    return (
-        <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
-            <StatusBar barStyle="dark-content" backgroundColor={theme.colors.surface} />
-            {renderHeaderContent()}
-        </Animated.View>
-    );
+// Calculate header height for proper padding
+const getHeaderHeight = () => {
+    return Platform.OS === 'ios' ? 88 + 44 : 56 + (StatusBar.currentHeight || 0) + 16;
 };
 
 // Profile List Item Component
@@ -286,6 +227,7 @@ const MyProfileScreen = ({ onBack }) => {
 
     const [isEditing, setIsEditing] = useState(false);
     const [errors, setErrors] = useState({});
+    const scrollY = useRef(new Animated.Value(0)).current;
 
     const validateForm = () => {
         const newErrors = {};
@@ -311,9 +253,19 @@ const MyProfileScreen = ({ onBack }) => {
                 type="back"
                 title="My Profile"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <Animated.ScrollView
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                showsVerticalScrollIndicator={false}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
+            >
                 <View style={styles.profileEditHeader}>
                     <View style={styles.avatarContainer}>
                         <View style={styles.avatar}>
@@ -445,7 +397,7 @@ const MyProfileScreen = ({ onBack }) => {
                 )}
 
                 <View style={styles.bottomSpacing} />
-            </ScrollView>
+            </Animated.ScrollView>
         </View>
     );
 };
@@ -463,6 +415,7 @@ const ChangePasswordScreen = ({ onBack }) => {
         new: false,
         confirm: false,
     });
+    const scrollY = useRef(new Animated.Value(0)).current;
 
     const validateForm = () => {
         const newErrors = {};
@@ -488,9 +441,19 @@ const ChangePasswordScreen = ({ onBack }) => {
                 type="back"
                 title="Change Password"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <Animated.ScrollView
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                showsVerticalScrollIndicator={false}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
+            >
                 <View style={styles.passwordGuidance}>
                     <Feather name="shield" size={48} color={theme.colors.success} />
                     <Text style={styles.guidanceTitle}>Secure Your Account</Text>
@@ -572,7 +535,7 @@ const ChangePasswordScreen = ({ onBack }) => {
                 </View>
 
                 <View style={styles.bottomSpacing} />
-            </ScrollView>
+            </Animated.ScrollView>
         </View>
     );
 };
@@ -605,6 +568,7 @@ const CardRegistrationScreen = ({ onBack }) => {
         cvv: '',
         name: '',
     });
+    const scrollY = useRef(new Animated.Value(0)).current;
 
     const getCardIcon = (type) => {
         switch (type) {
@@ -686,13 +650,20 @@ const CardRegistrationScreen = ({ onBack }) => {
                 type="back"
                 title="Payment Methods"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <View style={styles.content}>
-                <FlatList
+            <View style={[styles.content, { paddingTop: getHeaderHeight() }]}>
+                <Animated.FlatList
                     data={cards}
                     renderItem={renderCard}
                     keyExtractor={(item) => item.id}
+                    scrollEventThrottle={16}
+                    onScroll={Animated.event(
+                        [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                        { useNativeDriver: false }
+                    )}
                     ListHeaderComponent={() => (
                         <View style={styles.cardHeader}>
                             <Text style={styles.cardHeaderTitle}>Saved Payment Methods</Text>
@@ -837,6 +808,7 @@ const CallHistoryScreen = ({ onBack }) => {
             status: 'Refunded'
         }
     ]);
+    const scrollY = useRef(new Animated.Value(0)).current;
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -890,13 +862,20 @@ const CallHistoryScreen = ({ onBack }) => {
                 type="back"
                 title="Call History"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <FlatList
+            <Animated.FlatList
                 data={callHistory}
                 renderItem={renderCallItem}
                 keyExtractor={(item) => item.id}
-                style={styles.content}
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
                 ListHeaderComponent={() => (
                     <View style={styles.historyHeader}>
                         <Text style={styles.historyHeaderTitle}>Your Interpretation Calls</Text>
@@ -949,6 +928,7 @@ const PaymentHistoryScreen = ({ onBack }) => {
             transactionId: 'TXN-2024-004'
         }
     ]);
+    const scrollY = useRef(new Animated.Value(0)).current;
 
     const renderPaymentItem = ({ item }) => (
         <View style={styles.paymentHistoryItem}>
@@ -983,13 +963,20 @@ const PaymentHistoryScreen = ({ onBack }) => {
                 type="back"
                 title="Payment History"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <FlatList
+            <Animated.FlatList
                 data={paymentHistory}
                 renderItem={renderPaymentItem}
                 keyExtractor={(item) => item.id}
-                style={styles.content}
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
                 ListHeaderComponent={() => (
                     <View style={styles.historyHeader}>
                         <Text style={styles.historyHeaderTitle}>Payment Transactions</Text>
@@ -1018,6 +1005,7 @@ const LanguageCoverageScreen = ({ onBack }) => {
         { id: '11', from: 'Spanish', to: 'Portuguese', availability: '8AM-8PM EST', interpreters: 23 },
         { id: '12', from: 'French', to: 'Arabic', availability: '8AM-8PM EST', interpreters: 18 }
     ]);
+    const scrollY = useRef(new Animated.Value(0)).current;
 
     const renderLanguageItem = ({ item }) => (
         <View style={styles.languageItem}>
@@ -1047,13 +1035,20 @@ const LanguageCoverageScreen = ({ onBack }) => {
                 type="back"
                 title="Language Coverage"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <FlatList
+            <Animated.FlatList
                 data={languages}
                 renderItem={renderLanguageItem}
                 keyExtractor={(item) => item.id}
-                style={styles.content}
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
                 ListHeaderComponent={() => (
                     <View style={styles.coverageHeader}>
                         <Text style={styles.coverageHeaderTitle}>Available Language Pairs</Text>
@@ -1068,15 +1063,27 @@ const LanguageCoverageScreen = ({ onBack }) => {
 
 // About Screen
 const AboutScreen = ({ onBack }) => {
+    const scrollY = useRef(new Animated.Value(0)).current;
+
     return (
         <View style={styles.container}>
             <DynamicHeader
                 type="back"
                 title="About LanguageAccess"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <Animated.ScrollView
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                showsVerticalScrollIndicator={false}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
+            >
                 <View style={styles.aboutHeader}>
                     <View style={[styles.appIconContainer, { backgroundColor: theme.colors.secondary }]}>
                         <Feather name="globe" size={48} color={theme.colors.text.white} />
@@ -1118,22 +1125,34 @@ const AboutScreen = ({ onBack }) => {
                 </View>
 
                 <View style={styles.bottomSpacing} />
-            </ScrollView>
+            </Animated.ScrollView>
         </View>
     );
 };
 
 // Terms Screen
 const TermsScreen = ({ onBack }) => {
+    const scrollY = useRef(new Animated.Value(0)).current;
+
     return (
         <View style={styles.container}>
             <DynamicHeader
                 type="back"
                 title="Terms of Use"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <Animated.ScrollView
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                showsVerticalScrollIndicator={false}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
+            >
                 <View style={styles.legalContent}>
                     <Text style={styles.legalTitle}>Terms of Use</Text>
                     <Text style={styles.lastUpdated}>Last updated: June 1, 2024</Text>
@@ -1180,22 +1199,34 @@ const TermsScreen = ({ onBack }) => {
                 </View>
 
                 <View style={styles.bottomSpacing} />
-            </ScrollView>
+            </Animated.ScrollView>
         </View>
     );
 };
 
 // Privacy Policy Screen
 const PrivacyPolicyScreen = ({ onBack }) => {
+    const scrollY = useRef(new Animated.Value(0)).current;
+
     return (
         <View style={styles.container}>
             <DynamicHeader
                 type="back"
                 title="Privacy Policy"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <Animated.ScrollView
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                showsVerticalScrollIndicator={false}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
+            >
                 <View style={styles.legalContent}>
                     <Text style={styles.legalTitle}>Privacy Policy</Text>
                     <Text style={styles.lastUpdated}>Last updated: June 1, 2024</Text>
@@ -1237,7 +1268,7 @@ const PrivacyPolicyScreen = ({ onBack }) => {
                 </View>
 
                 <View style={styles.bottomSpacing} />
-            </ScrollView>
+            </Animated.ScrollView>
         </View>
     );
 };
@@ -1250,6 +1281,7 @@ const ContactUsScreen = ({ onBack }) => {
         priority: 'normal'
     });
     const [showThankYou, setShowThankYou] = useState(false);
+    const scrollY = useRef(new Animated.Value(0)).current;
 
     const handleSubmit = () => {
         if (contactForm.subject.trim() && contactForm.message.trim()) {
@@ -1269,9 +1301,19 @@ const ContactUsScreen = ({ onBack }) => {
                 type="back"
                 title="Contact Us"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <Animated.ScrollView
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                showsVerticalScrollIndicator={false}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
+            >
                 <View style={styles.contactHeader}>
                     <Feather name="headphones" size={48} color={theme.colors.accent} />
                     <Text style={styles.contactTitle}>We're Here to Help</Text>
@@ -1358,21 +1400,34 @@ const ContactUsScreen = ({ onBack }) => {
                 </Modal>
 
                 <View style={styles.bottomSpacing} />
-            </ScrollView>
+            </Animated.ScrollView>
         </View>
     );
 };
 
 // Version Screen
 const VersionScreen = ({ onBack }) => {
+    const scrollY = useRef(new Animated.Value(0)).current;
+
     return (
         <View style={styles.container}>
             <DynamicHeader
                 type="back"
                 title="App Version"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+
+            <Animated.ScrollView
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                showsVerticalScrollIndicator={false}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
+            >
                 <View style={styles.versionHeader}>
                     <View style={[styles.appIconLarge, { backgroundColor: theme.colors.accent }]}>
                         <Feather name="smartphone" size={64} color={theme.colors.text.white} />
@@ -1416,7 +1471,7 @@ const VersionScreen = ({ onBack }) => {
                     </Text>
                 </View>
                 <View style={styles.bottomSpacing} />
-            </ScrollView>
+            </Animated.ScrollView>
         </View>
     );
 };
@@ -1593,6 +1648,7 @@ const DeleteAccountScreen = ({ onBack, onDeleteAccount }) => {
 // Main Profile Screen Component
 const MainProfileScreen = ({ onNavigate, onBack }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
+    const scrollY = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
         Animated.timing(fadeAnim, {
@@ -1619,9 +1675,19 @@ const MainProfileScreen = ({ onNavigate, onBack }) => {
                 type="back"
                 title="Profile"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <Animated.ScrollView
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                showsVerticalScrollIndicator={false}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
+            >
                 {/* User Profile Header */}
                 <View style={styles.profileHeader}>
                     <View style={styles.avatarContainer}>
@@ -1750,7 +1816,7 @@ const MainProfileScreen = ({ onNavigate, onBack }) => {
                 </View>
 
                 <View style={styles.bottomSpacing} />
-            </ScrollView>
+            </Animated.ScrollView>
         </Animated.View>
     );
 };
@@ -1764,35 +1830,6 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         paddingHorizontal: theme.spacing.md,
-    },
-
-    // Header Styles
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: theme.spacing.md,
-        paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight + 10,
-        paddingBottom: theme.spacing.md,
-        backgroundColor: theme.colors.surface,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.border,
-    },
-    headerLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-    },
-    backButton: {
-        marginRight: theme.spacing.md,
-    },
-    headerTitle: {
-        ...theme.typography.h2,
-        color: theme.colors.text.primary,
-    },
-    headerRight: {
-        flexDirection: 'row',
-        alignItems: 'center',
     },
 
     // Profile List Styles
@@ -1894,6 +1931,8 @@ const styles = StyleSheet.create({
         borderRadius: theme.borderRadius.md,
         marginBottom: theme.spacing.md,
         overflow: 'hidden',
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.lg,
     },
     inputGroup: {
         marginBottom: theme.spacing.md,
@@ -1938,6 +1977,9 @@ const styles = StyleSheet.create({
     },
     cardContent: {
         flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
     },
     cardNumber: {
         ...theme.typography.bodyMedium,
@@ -1954,6 +1996,7 @@ const styles = StyleSheet.create({
     },
     deleteButton: {
         marginLeft: theme.spacing.sm,
+        padding: theme.spacing.sm,
     },
     cardHeader: {
         paddingHorizontal: theme.spacing.md,
@@ -2649,13 +2692,6 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.md,
         overflow: 'hidden',
     },
-    sectionHeader: {
-        paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.sm,
-        backgroundColor: theme.colors.surfaceLight,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.border,
-    },
     sectionHeaderText: {
         ...theme.typography.bodyMedium,
         color: theme.colors.text.secondary,
@@ -2664,22 +2700,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
 
-    // Header Styles
-    headerTitleSecondary: {
-        ...theme.typography.h3,
-        color: theme.colors.text.primary,
-        marginLeft: theme.spacing.md,
-    },
-    headerActions: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    headerButton: {
-        padding: theme.spacing.sm,
-        marginLeft: theme.spacing.sm,
-    },
-
-    // Profile Header Styles
+    // Avatar Styles
     avatar: {
         width: 100,
         height: 100,
@@ -2763,6 +2784,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingVertical: theme.spacing.md,
+        paddingHorizontal: theme.spacing.md,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.border,
     },

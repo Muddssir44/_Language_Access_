@@ -746,7 +746,7 @@ const styles = StyleSheet.create({
 
     // Tips Section
     tipsSection: {
-        marginBottom: theme.spacing.xxl,
+        marginBottom: 130,
     },
     sectionHeader: {
         flexDirection: 'row',

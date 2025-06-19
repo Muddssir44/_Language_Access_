@@ -13,28 +13,10 @@ import {
     Image,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import DynamicHeader from '../Components/DynamicHeader';
+import { theme, getHeaderHeight } from '../Components/theme';
 
-// Import reusable components from ClientProfileScreen
-import {
-    MyProfileScreen,
-    ChangePasswordScreen,
-    CardRegistrationScreen,
-    CallHistoryScreen,
-    PaymentHistoryScreen,
-    LanguageCoverageScreen,
-    AboutScreen,
-    TermsScreen,
-    PrivacyPolicyScreen,
-    ContactUsScreen,
-    VersionScreen,
-    SignOutConfirmationScreen,
-    DeleteAccountScreen,
-    DynamicHeader,
-    ProfileListItem,
-    SectionHeader
-} from './ClientProfileScreen';
-
-// Import the 5 new interpreter-specific screens
+// Import the interpreter-specific screens
 import VerificationRequestScreen from './VerificationRequestScreen';
 import CallRateScreen from './CallRateScreen';
 import CashOutScreen from './CashOutScreen';
@@ -43,57 +25,150 @@ import StripeConnectScreen from './StripeConnectScreen';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-// Reuse theme from ClientProfileScreen
-const theme = {
-    colors: {
-        primary: '#4F46E5',
-        primaryLight: '#818CF8',
-        secondary: '#06B6D4',
-        accent: '#F59E0B',
-        success: '#10B981',
-        warning: '#F59E0B',
-        error: '#EF4444',
-        background: '#FAFAFA',
-        surface: '#FFFFFF',
-        surfaceLight: '#F8FAFC',
-        text: {
-            primary: '#1F2937',
-            secondary: '#6B7280',
-            light: '#9CA3AF',
-            white: '#FFFFFF',
-        },
-        border: '#E5E7EB',
-        shadow: 'rgba(0, 0, 0, 0.1)',
-    },
-    spacing: {
-        xs: 4,
-        sm: 8,
-        md: 16,
-        lg: 24,
-        xl: 32,
-        xxl: 48,
-    },
-    borderRadius: {
-        sm: 8,
-        md: 12,
-        lg: 16,
-        xl: 24,
-    },
-    typography: {
-        h1: { fontSize: 28, fontWeight: '700' },
-        h2: { fontSize: 24, fontWeight: '600' },
-        h3: { fontSize: 20, fontWeight: '600' },
-        body: { fontSize: 16, fontWeight: '400' },
-        bodyMedium: { fontSize: 16, fontWeight: '500' },
-        caption: { fontSize: 14, fontWeight: '400' },
-        small: { fontSize: 12, fontWeight: '400' },
-    },
-};
+// Placeholder components for screens that would be shared with ClientProfile
+const MyProfileScreen = ({ onBack }) => (
+    <View style={styles.placeholderScreen}>
+        <DynamicHeader title="My Profile" onBack={onBack} />
+        <View style={styles.placeholderContent}>
+            <Text style={styles.placeholderText}>My Profile Screen - To be implemented</Text>
+        </View>
+    </View>
+);
 
-// Calculate header height for proper padding
-const getHeaderHeight = () => {
-    return Platform.OS === 'ios' ? 88 + 44 : 56 + (StatusBar.currentHeight || 0) + 16;
-};
+const ChangePasswordScreen = ({ onBack }) => (
+    <View style={styles.placeholderScreen}>
+        <DynamicHeader title="Change Password" onBack={onBack} />
+        <View style={styles.placeholderContent}>
+            <Text style={styles.placeholderText}>Change Password Screen - To be implemented</Text>
+        </View>
+    </View>
+);
+
+const CardRegistrationScreen = ({ onBack }) => (
+    <View style={styles.placeholderScreen}>
+        <DynamicHeader title="Card Registration" onBack={onBack} />
+        <View style={styles.placeholderContent}>
+            <Text style={styles.placeholderText}>Card Registration Screen - To be implemented</Text>
+        </View>
+    </View>
+);
+
+const CallHistoryScreen = ({ onBack }) => (
+    <View style={styles.placeholderScreen}>
+        <DynamicHeader title="Call History" onBack={onBack} />
+        <View style={styles.placeholderContent}>
+            <Text style={styles.placeholderText}>Call History Screen - To be implemented</Text>
+        </View>
+    </View>
+);
+
+const PaymentHistoryScreen = ({ onBack }) => (
+    <View style={styles.placeholderScreen}>
+        <DynamicHeader title="Payment History" onBack={onBack} />
+        <View style={styles.placeholderContent}>
+            <Text style={styles.placeholderText}>Payment History Screen - To be implemented</Text>
+        </View>
+    </View>
+);
+
+const LanguageCoverageScreen = ({ onBack }) => (
+    <View style={styles.placeholderScreen}>
+        <DynamicHeader title="Language Coverage" onBack={onBack} />
+        <View style={styles.placeholderContent}>
+            <Text style={styles.placeholderText}>Language Coverage Screen - To be implemented</Text>
+        </View>
+    </View>
+);
+
+const AboutScreen = ({ onBack }) => (
+    <View style={styles.placeholderScreen}>
+        <DynamicHeader title="About" onBack={onBack} />
+        <View style={styles.placeholderContent}>
+            <Text style={styles.placeholderText}>About Screen - To be implemented</Text>
+        </View>
+    </View>
+);
+
+const TermsScreen = ({ onBack }) => (
+    <View style={styles.placeholderScreen}>
+        <DynamicHeader title="Terms of Service" onBack={onBack} />
+        <View style={styles.placeholderContent}>
+            <Text style={styles.placeholderText}>Terms Screen - To be implemented</Text>
+        </View>
+    </View>
+);
+
+const PrivacyPolicyScreen = ({ onBack }) => (
+    <View style={styles.placeholderScreen}>
+        <DynamicHeader title="Privacy Policy" onBack={onBack} />
+        <View style={styles.placeholderContent}>
+            <Text style={styles.placeholderText}>Privacy Policy Screen - To be implemented</Text>
+        </View>
+    </View>
+);
+
+const ContactUsScreen = ({ onBack }) => (
+    <View style={styles.placeholderScreen}>
+        <DynamicHeader title="Contact Us" onBack={onBack} />
+        <View style={styles.placeholderContent}>
+            <Text style={styles.placeholderText}>Contact Us Screen - To be implemented</Text>
+        </View>
+    </View>
+);
+
+const VersionScreen = ({ onBack }) => (
+    <View style={styles.placeholderScreen}>
+        <DynamicHeader title="Version Info" onBack={onBack} />
+        <View style={styles.placeholderContent}>
+            <Text style={styles.placeholderText}>Version Screen - To be implemented</Text>
+        </View>
+    </View>
+);
+
+const SignOutConfirmationScreen = ({ onBack, onSignOut }) => (
+    <View style={styles.placeholderScreen}>
+        <DynamicHeader title="Sign Out" onBack={onBack} />
+        <View style={styles.placeholderContent}>
+            <Text style={styles.placeholderText}>Sign Out Confirmation - To be implemented</Text>
+            <TouchableOpacity style={styles.placeholderButton} onPress={onSignOut}>
+                <Text style={styles.placeholderButtonText}>Sign Out</Text>
+            </TouchableOpacity>
+        </View>
+    </View>
+);
+
+const DeleteAccountScreen = ({ onBack, onDeleteAccount }) => (
+    <View style={styles.placeholderScreen}>
+        <DynamicHeader title="Delete Account" onBack={onBack} />
+        <View style={styles.placeholderContent}>
+            <Text style={styles.placeholderText}>Delete Account Screen - To be implemented</Text>
+            <TouchableOpacity style={styles.placeholderButton} onPress={onDeleteAccount}>
+                <Text style={styles.placeholderButtonText}>Delete Account</Text>
+            </TouchableOpacity>
+        </View>
+    </View>
+);
+
+// Reusable Profile List Item Component
+const ProfileListItem = ({ icon, title, subtitle, onPress, iconColor, rightComponent }) => (
+    <TouchableOpacity style={styles.profileListItem} onPress={onPress} activeOpacity={0.7}>
+        <View style={[styles.profileListIcon, { backgroundColor: iconColor }]}>
+            <Feather name={icon} size={20} color={theme.colors.text.white} />
+        </View>
+        <View style={styles.profileListContent}>
+            <Text style={styles.profileListTitle}>{title}</Text>
+            <Text style={styles.profileListSubtitle}>{subtitle}</Text>
+        </View>
+        {rightComponent || <Feather name="chevron-right" size={20} color={theme.colors.text.light} />}
+    </TouchableOpacity>
+);
+
+// Section Header Component
+const SectionHeader = ({ title }) => (
+    <View style={styles.sectionHeader}>
+        <Text style={styles.sectionHeaderTitle}>{title}</Text>
+    </View>
+);
 
 // Main Interpreter Profile Screen
 const InterpreterProfileScreen = ({ navigation }) => {
@@ -875,6 +950,81 @@ const styles = StyleSheet.create({
         ...theme.typography.small,
         color: theme.colors.text.secondary,
         marginLeft: theme.spacing.xs,
+    },
+
+    // Profile List Item Styles
+    profileListItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: theme.spacing.md,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
+    },
+    profileListIcon: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: theme.spacing.md,
+    },
+    profileListContent: {
+        flex: 1,
+    },
+    profileListTitle: {
+        ...theme.typography.bodyMedium,
+        color: theme.colors.text.primary,
+        marginBottom: 2,
+    },
+    profileListSubtitle: {
+        ...theme.typography.caption,
+        color: theme.colors.text.secondary,
+    },
+
+    // Section Header Styles
+    sectionHeader: {
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.sm,
+        backgroundColor: theme.colors.surfaceLight,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
+    },
+    sectionHeaderTitle: {
+        ...theme.typography.bodyMedium,
+        color: theme.colors.text.secondary,
+        fontWeight: '600',
+        textTransform: 'uppercase',
+        fontSize: 12,
+        letterSpacing: 0.5,
+    },
+
+    // Placeholder Screen Styles
+    placeholderScreen: {
+        flex: 1,
+        backgroundColor: theme.colors.background,
+    },
+    placeholderContent: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: theme.spacing.xl,
+    },
+    placeholderText: {
+        ...theme.typography.body,
+        color: theme.colors.text.secondary,
+        textAlign: 'center',
+        marginBottom: theme.spacing.lg,
+    },
+    placeholderButton: {
+        backgroundColor: theme.colors.primary,
+        paddingHorizontal: theme.spacing.lg,
+        paddingVertical: theme.spacing.md,
+        borderRadius: theme.borderRadius.md,
+    },
+    placeholderButtonText: {
+        ...theme.typography.bodyMedium,
+        color: theme.colors.text.white,
+        fontWeight: '600',
     },
 });
 

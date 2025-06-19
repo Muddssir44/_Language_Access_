@@ -19,7 +19,7 @@ import { theme, getHeaderHeight } from '../Components/theme';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-const CallRateScreen = ({ navigation }) => {
+const CallRateScreen = ({ navigation, onBack }) => {
     const [rates, setRates] = useState({
         audio: 2.50,
         video: 3.00,
@@ -82,7 +82,11 @@ const CallRateScreen = ({ navigation }) => {
     };
 
     const handleBack = () => {
-        navigation.goBack();
+        if (onBack) {
+            onBack();
+        } else if (navigation) {
+            navigation.goBack();
+        }
     };
 
     const handleSave = () => {

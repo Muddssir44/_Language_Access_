@@ -10,6 +10,7 @@ import {
     Platform,
     StatusBar,
     StyleSheet,
+    Image,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
@@ -87,6 +88,11 @@ const theme = {
         caption: { fontSize: 14, fontWeight: '400' },
         small: { fontSize: 12, fontWeight: '400' },
     },
+};
+
+// Calculate header height for proper padding
+const getHeaderHeight = () => {
+    return Platform.OS === 'ios' ? 88 + 44 : 56 + (StatusBar.currentHeight || 0) + 16;
 };
 
 // Main Interpreter Profile Screen
@@ -192,6 +198,30 @@ const InterpreterProfileScreen = ({ navigation }) => {
 // Main Interpreter Profile Screen Component
 const MainInterpreterProfileScreen = ({ onNavigate, onBack }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
+    const scrollY = useRef(new Animated.Value(0)).current;
+
+    // Dynamic interpreter data state - this would typically come from your backend/API
+    const [interpreterData, setInterpreterData] = useState({
+        firstName: 'Maria',
+        lastName: 'Rodriguez',
+        email: 'maria.rodriguez@languageaccess.com',
+        specialty: 'Certified Spanish Interpreter',
+        languages: ['Spanish', 'English'],
+        rating: 4.9,
+        totalReviews: 127,
+        totalCalls: 156,
+        totalEarnings: 1247.50,
+        memberSince: '2022',
+        isVerified: true,
+        isProfessional: true,
+        status: 'active', // active, busy, offline
+        lastActive: 'Now',
+        avatar: null, // Could be an image URL from backend
+        profileCompletion: 92,
+        averageCallDuration: '18 min',
+        responseRate: 98,
+        languagesSupported: 3
+    });
 
     useEffect(() => {
         Animated.timing(fadeAnim, {
@@ -199,6 +229,10 @@ const MainInterpreterProfileScreen = ({ onNavigate, onBack }) => {
             duration: 600,
             useNativeDriver: false,
         }).start();
+
+        // Simulate fetching interpreter data from backend
+        // In real app, you'd call your API here
+        // fetchInterpreterProfile().then(setInterpreterData);
     }, []);
 
     const handleSignOut = () => {
@@ -212,35 +246,186 @@ const MainInterpreterProfileScreen = ({ onNavigate, onBack }) => {
         );
     };
 
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'active': return theme.colors.success;
+            case 'busy': return theme.colors.warning;
+            case 'offline': return theme.colors.text.light;
+            default: return theme.colors.text.light;
+        }
+    };
+
+    const getCompletionColor = (percentage) => {
+        if (percentage >= 80) return theme.colors.success;
+        if (percentage >= 60) return theme.colors.warning;
+        return theme.colors.error;
+    };
+
+    const formatCurrency = (amount) => {
+        return new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: 2
+        }).format(amount);
+    };
+
     return (
         <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
             <DynamicHeader
                 type="back"
                 title="Interpreter Profile"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                {/* Interpreter Profile Header */}
-                <View style={styles.profileHeader}>
-                    <View style={styles.avatarContainer}>
-                        <View style={[styles.avatar, { backgroundColor: theme.colors.secondary }]}>
-                            <Feather name="mic" size={40} color={theme.colors.text.white} />
+            <Animated.ScrollView
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                showsVerticalScrollIndicator={false}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
+            >
+                {/* Enhanced Interpreter Profile Header */}
+                <View style={styles.enhancedProfileHeader}>
+                    {/* Background Gradient Effect */}
+                    <View style={styles.profileHeaderBackground} />
+
+                    <View style={styles.profileHeaderContent}>
+                        {/* Left Section - Avatar and Basic Info */}
+                        <View style={styles.profileHeaderLeft}>
+                            <View style={styles.compactAvatarContainer}>
+                                <View style={styles.compactAvatar}>
+                                    {interpreterData.avatar ? (
+                                        <Image source={{ uri: interpreterData.avatar }} style={styles.avatarImage} />
+                                    ) : (
+                                        <Feather name="mic" size={28} color={theme.colors.text.white} />
+                                    )}
+                                </View>
+
+                                {/* Status Indicator */}
+                                <View style={[styles.statusIndicator, { backgroundColor: getStatusColor(interpreterData.status) }]} />
+
+                                {/* Verification Badge */}
+                                {interpreterData.isVerified && (
+                                    <View style={styles.verificationBadge}>
+                                        <Feather name="shield-check" size={12} color={theme.colors.text.white} />
+                                    </View>
+                                )}
+
+                                {/* Edit Avatar Button */}
+                                <TouchableOpacity style={styles.compactEditAvatarButton}>
+                                    <Feather name="camera" size={12} color={theme.colors.text.white} />
+                                </TouchableOpacity>
+                            </View>
+
+                            <View style={styles.profileBasicInfo}>
+                                <View style={styles.nameContainer}>
+                                    <Text style={styles.compactProfileName}>
+                                        {interpreterData.firstName} {interpreterData.lastName}
+                                    </Text>
+                                    {interpreterData.isProfessional && (
+                                        <Feather name="award" size={16} color={theme.colors.accent} style={styles.professionalIcon} />
+                                    )}
+                                </View>
+                                <Text style={styles.compactProfileSpecialty} numberOfLines={1}>
+                                    {interpreterData.specialty}
+                                </Text>
+                                <Text style={styles.compactProfileEmail} numberOfLines={1}>
+                                    {interpreterData.email}
+                                </Text>
+
+                                {/* Rating Display */}
+                                <View style={styles.compactRatingContainer}>
+                                    <Feather name="star" size={12} color={theme.colors.accent} />
+                                    <Text style={styles.compactRating}>{interpreterData.rating}</Text>
+                                    <Text style={styles.compactRatingCount}>({interpreterData.totalReviews})</Text>
+                                </View>
+                            </View>
                         </View>
-                        <TouchableOpacity style={styles.editAvatarButton}>
-                            <Feather name="camera" size={16} color={theme.colors.text.white} />
-                        </TouchableOpacity>
-                        <View style={styles.verificationBadge}>
-                            <Feather name="shield-check" size={16} color={theme.colors.text.white} />
+
+                        {/* Right Section - Stats and Actions */}
+                        <View style={styles.profileHeaderRight}>
+                            {/* Profile Completion */}
+                            <View style={styles.profileCompletionContainer}>
+                                <View style={styles.profileCompletionHeader}>
+                                    <Text style={styles.completionLabel}>Profile</Text>
+                                    <Text style={[styles.completionPercentage, { color: getCompletionColor(interpreterData.profileCompletion) }]}>
+                                        {interpreterData.profileCompletion}%
+                                    </Text>
+                                </View>
+                                <View style={styles.progressBarContainer}>
+                                    <View style={styles.progressBarBackground} />
+                                    <View
+                                        style={[
+                                            styles.progressBarFill,
+                                            {
+                                                width: `${interpreterData.profileCompletion}%`,
+                                                backgroundColor: getCompletionColor(interpreterData.profileCompletion)
+                                            }
+                                        ]}
+                                    />
+                                </View>
+                            </View>
+
+                            {/* Earnings Display */}
+                            <View style={styles.earningsContainer}>
+                                <Text style={styles.earningsLabel}>Available</Text>
+                                <Text style={styles.earningsAmount}>{formatCurrency(interpreterData.totalEarnings)}</Text>
+                            </View>
+
+                            {/* Quick Stats */}
+                            <View style={styles.quickStats}>
+                                <View style={styles.statItem}>
+                                    <Text style={styles.statValue}>{interpreterData.totalCalls}</Text>
+                                    <Text style={styles.statLabel}>Calls</Text>
+                                </View>
+                                <View style={styles.statDivider} />
+                                <View style={styles.statItem}>
+                                    <Text style={styles.statValue}>{interpreterData.responseRate}%</Text>
+                                    <Text style={styles.statLabel}>Response</Text>
+                                </View>
+                                <View style={styles.statDivider} />
+                                <View style={styles.statItem}>
+                                    <Text style={styles.statValue}>{interpreterData.languagesSupported}</Text>
+                                    <Text style={styles.statLabel}>Languages</Text>
+                                </View>
+                            </View>
+
+                            {/* Quick Actions */}
+                            <View style={styles.quickActions}>
+                                <TouchableOpacity
+                                    style={styles.quickActionButton}
+                                    onPress={() => onNavigate('myProfile')}
+                                >
+                                    <Feather name="edit-3" size={14} color={theme.colors.text.white} />
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.quickActionButton}
+                                    onPress={() => onNavigate('cashOut')}
+                                >
+                                    <Feather name="trending-up" size={14} color={theme.colors.text.white} />
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.quickActionButton}
+                                    onPress={() => onNavigate('earningsHistory')}
+                                >
+                                    <Feather name="bar-chart-2" size={14} color={theme.colors.text.white} />
+                                </TouchableOpacity>
+                            </View>
                         </View>
                     </View>
-                    <Text style={styles.profileName}>Maria Rodriguez</Text>
-                    <Text style={styles.profileEmail}>maria.rodriguez@languageaccess.com</Text>
-                    <Text style={styles.interpreterSpecialty}>Certified Spanish Interpreter</Text>
-                    <View style={styles.ratingContainer}>
-                        <Feather name="star" size={16} color={theme.colors.accent} />
-                        <Text style={styles.rating}>4.9</Text>
-                        <Text style={styles.ratingCount}>(127 reviews)</Text>
+
+                    {/* Last Active Status */}
+                    <View style={styles.lastActiveContainer}>
+                        <View style={styles.lastActiveContent}>
+                            <Feather name="clock" size={12} color={theme.colors.text.light} />
+                            <Text style={styles.lastActiveText}>
+                                Last active: {interpreterData.lastActive}
+                            </Text>
+                        </View>
                     </View>
                 </View>
 
@@ -309,7 +494,7 @@ const MainInterpreterProfileScreen = ({ onNavigate, onBack }) => {
                         iconColor={theme.colors.primary}
                         rightComponent={
                             <View style={styles.balanceIndicator}>
-                                <Text style={styles.balanceText}>$1,247.50</Text>
+                                <Text style={styles.balanceText}>{formatCurrency(interpreterData.totalEarnings)}</Text>
                             </View>
                         }
                     />
@@ -398,7 +583,7 @@ const MainInterpreterProfileScreen = ({ onNavigate, onBack }) => {
                 </View>
 
                 <View style={styles.bottomSpacing} />
-            </ScrollView>
+            </Animated.ScrollView>
         </Animated.View>
     );
 };
@@ -412,85 +597,6 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         paddingHorizontal: theme.spacing.md,
-    },
-
-    // Profile Header Styles
-    profileHeader: {
-        alignItems: 'center',
-        paddingVertical: theme.spacing.xl,
-        backgroundColor: theme.colors.surface,
-        marginBottom: theme.spacing.md,
-        borderRadius: theme.borderRadius.md,
-        position: 'relative',
-    },
-    avatarContainer: {
-        width: 100,
-        height: 100,
-        marginBottom: theme.spacing.md,
-        position: 'relative',
-    },
-    avatar: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
-        backgroundColor: theme.colors.primary,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    editAvatarButton: {
-        position: 'absolute',
-        bottom: 0,
-        right: 0,
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: theme.colors.accent,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 3,
-        borderColor: theme.colors.surface,
-    },
-    verificationBadge: {
-        position: 'absolute',
-        top: -5,
-        right: -5,
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: theme.colors.success,
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 3,
-        borderColor: theme.colors.surface,
-    },
-    profileName: {
-        ...theme.typography.h2,
-        color: theme.colors.text.primary,
-        marginBottom: theme.spacing.xs,
-    },
-    profileEmail: {
-        ...theme.typography.body,
-        color: theme.colors.text.secondary,
-        marginBottom: theme.spacing.xs,
-    },
-    interpreterSpecialty: {
-        ...theme.typography.bodyMedium,
-        color: theme.colors.secondary,
-        marginBottom: theme.spacing.sm,
-    },
-    ratingContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    rating: {
-        ...theme.typography.bodyMedium,
-        color: theme.colors.text.primary,
-        marginLeft: theme.spacing.xs,
-        marginRight: theme.spacing.xs,
-    },
-    ratingCount: {
-        ...theme.typography.caption,
-        color: theme.colors.text.secondary,
     },
 
     // Section Styles
@@ -518,6 +624,257 @@ const styles = StyleSheet.create({
     // Bottom Spacing
     bottomSpacing: {
         height: theme.spacing.xl,
+    },
+
+    // Enhanced Profile Header Styles
+    enhancedProfileHeader: {
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.lg,
+        marginBottom: theme.spacing.md,
+        overflow: 'hidden',
+        elevation: 3,
+        shadowColor: theme.colors.shadow,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    profileHeaderBackground: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '75%',
+        backgroundColor: theme.colors.primary,
+        borderTopLeftRadius: theme.borderRadius.lg,
+        borderTopRightRadius: theme.borderRadius.lg,
+    },
+    profileHeaderContent: {
+        flexDirection: 'row',
+        padding: theme.spacing.lg,
+        alignItems: 'flex-start',
+        minHeight: 140,
+    },
+    profileHeaderLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    compactAvatarContainer: {
+        position: 'relative',
+        marginRight: theme.spacing.md,
+    },
+    compactAvatar: {
+        width: 70,
+        height: 70,
+        borderRadius: 35,
+        backgroundColor: theme.colors.primaryLight,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 3,
+        borderColor: theme.colors.surface,
+        overflow: 'hidden',
+    },
+    avatarImage: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 32,
+    },
+    statusIndicator: {
+        position: 'absolute',
+        bottom: 2,
+        right: 2,
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        borderWidth: 2,
+        borderColor: theme.colors.surface,
+    },
+    verificationBadge: {
+        position: 'absolute',
+        top: -5,
+        right: -5,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: theme.colors.success,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: theme.colors.surface,
+    },
+    compactEditAvatarButton: {
+        position: 'absolute',
+        top: -5,
+        right: -5,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: theme.colors.accent,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: theme.colors.surface,
+    },
+    profileBasicInfo: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+    nameContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: theme.spacing.xs,
+    },
+    compactProfileName: {
+        ...theme.typography.h3,
+        color: theme.colors.text.white,
+        fontWeight: '700',
+    },
+    professionalIcon: {
+        marginLeft: theme.spacing.xs,
+    },
+    compactProfileSpecialty: {
+        ...theme.typography.caption,
+        color: theme.colors.text.white,
+        opacity: 0.9,
+        marginBottom: 2,
+    },
+    compactProfileEmail: {
+        ...theme.typography.caption,
+        color: theme.colors.text.white,
+        opacity: 0.8,
+        marginBottom: theme.spacing.xs,
+    },
+    compactRatingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    compactRating: {
+        ...theme.typography.small,
+        color: theme.colors.text.white,
+        fontWeight: '600',
+        marginLeft: theme.spacing.xs,
+        marginRight: theme.spacing.xs,
+    },
+    compactRatingCount: {
+        ...theme.typography.small,
+        color: theme.colors.text.white,
+        opacity: 0.8,
+    },
+    profileHeaderRight: {
+        alignItems: 'flex-end',
+        justifyContent: 'space-between',
+        minHeight: 70,
+        flexDirection: 'column',
+        width: 120,
+    },
+    profileCompletionContainer: {
+        alignItems: 'flex-end',
+        marginBottom: theme.spacing.xs,
+        minWidth: 80,
+    },
+    profileCompletionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: theme.spacing.xs,
+    },
+    completionLabel: {
+        ...theme.typography.small,
+        color: theme.colors.text.white,
+        opacity: 0.9,
+        marginRight: theme.spacing.xs,
+    },
+    completionPercentage: {
+        ...theme.typography.bodyMedium,
+        fontWeight: '700',
+        color: theme.colors.text.white,
+    },
+    progressBarContainer: {
+        width: 60,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        overflow: 'hidden',
+    },
+    progressBarBackground: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    progressBarFill: {
+        height: '100%',
+        borderRadius: 3,
+    },
+    earningsContainer: {
+        alignItems: 'flex-end',
+        marginBottom: theme.spacing.xs,
+        minWidth: 80,
+    },
+    earningsLabel: {
+        ...theme.typography.small,
+        color: theme.colors.text.white,
+        opacity: 0.9,
+        marginBottom: 2,
+    },
+    earningsAmount: {
+        ...theme.typography.bodyMedium,
+        color: theme.colors.text.white,
+        fontWeight: '700',
+    },
+    quickStats: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: theme.spacing.xs,
+    },
+    statItem: {
+        alignItems: 'center',
+        minWidth: 30,
+    },
+    statValue: {
+        ...theme.typography.small,
+        color: theme.colors.text.white,
+        fontWeight: '600',
+        fontSize: 12,
+    },
+    statLabel: {
+        ...theme.typography.small,
+        color: theme.colors.text.white,
+        opacity: 0.8,
+        fontSize: 9,
+    },
+    statDivider: {
+        width: 1,
+        height: 16,
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        marginHorizontal: theme.spacing.xs,
+    },
+    quickActions: {
+        flexDirection: 'row',
+        gap: theme.spacing.xs,
+    },
+    quickActionButton: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    lastActiveContainer: {
+        backgroundColor: theme.colors.surface,
+        paddingHorizontal: theme.spacing.lg,
+        paddingBottom: theme.spacing.md,
+        paddingTop: theme.spacing.xs,
+    },
+    lastActiveContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    lastActiveText: {
+        ...theme.typography.small,
+        color: theme.colors.text.secondary,
+        marginLeft: theme.spacing.xs,
     },
 });
 

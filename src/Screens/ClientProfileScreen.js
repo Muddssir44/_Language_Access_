@@ -18,120 +18,10 @@ import {
     Switch,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import DynamicHeader from '../Components/DynamicHeader';
+import { theme, getHeaderHeight } from '../Components/theme';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-
-// Consistent theme from the reference
-const theme = {
-    colors: {
-        primary: '#4F46E5',
-        primaryLight: '#818CF8',
-        secondary: '#06B6D4',
-        accent: '#F59E0B',
-        success: '#10B981',
-        warning: '#F59E0B',
-        error: '#EF4444',
-        background: '#FAFAFA',
-        surface: '#FFFFFF',
-        surfaceLight: '#F8FAFC',
-        text: {
-            primary: '#1F2937',
-            secondary: '#6B7280',
-            light: '#9CA3AF',
-            white: '#FFFFFF',
-        },
-        border: '#E5E7EB',
-        shadow: 'rgba(0, 0, 0, 0.1)',
-    },
-    spacing: {
-        xs: 4,
-        sm: 8,
-        md: 16,
-        lg: 24,
-        xl: 32,
-        xxl: 48,
-    },
-    borderRadius: {
-        sm: 8,
-        md: 12,
-        lg: 16,
-        xl: 24,
-    },
-    typography: {
-        h1: { fontSize: 28, fontWeight: '700' },
-        h2: { fontSize: 24, fontWeight: '600' },
-        h3: { fontSize: 20, fontWeight: '600' },
-        body: { fontSize: 16, fontWeight: '400' },
-        bodyMedium: { fontSize: 16, fontWeight: '500' },
-        caption: { fontSize: 14, fontWeight: '400' },
-        small: { fontSize: 12, fontWeight: '400' },
-    },
-};
-
-// Reusable Dynamic Header Component
-const DynamicHeader = ({
-    type = 'back',
-    title = 'Profile',
-    onBack,
-    onBell,
-    onProfile,
-    onFavorite,
-    showFavorite = false
-}) => {
-    const fadeAnim = useRef(new Animated.Value(0)).current;
-
-    useEffect(() => {
-        Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: false,
-        }).start();
-    }, []);
-
-    const renderHeaderContent = () => {
-        switch (type) {
-            case 'home':
-                return (
-                    <>
-                        <Text style={styles.headerTitle}>LanguageAccess</Text>
-                        <View style={styles.headerActions}>
-                            <TouchableOpacity style={styles.headerButton} onPress={onBell} activeOpacity={0.7}>
-                                <Feather name="bell" size={24} color={theme.colors.text.primary} />
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.headerButton} onPress={onProfile} activeOpacity={0.7}>
-                                <Feather name="user" size={24} color={theme.colors.text.primary} />
-                            </TouchableOpacity>
-                        </View>
-                    </>
-                );
-            case 'back':
-                return (
-                    <>
-                        <View style={styles.headerLeft}>
-                            <TouchableOpacity style={styles.headerButton} onPress={onBack} activeOpacity={0.7}>
-                                <Feather name="chevron-left" size={24} color={theme.colors.text.primary} />
-                            </TouchableOpacity>
-                            <Text style={styles.headerTitleSecondary}>{title}</Text>
-                        </View>
-                        {showFavorite && (
-                            <TouchableOpacity style={styles.headerButton} onPress={onFavorite} activeOpacity={0.7}>
-                                <Feather name="star" size={24} color={theme.colors.text.primary} />
-                            </TouchableOpacity>
-                        )}
-                    </>
-                );
-            default:
-                return <Text style={styles.headerTitleSecondary}>{title}</Text>;
-        }
-    };
-
-    return (
-        <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
-            <StatusBar barStyle="dark-content" backgroundColor={theme.colors.surface} />
-            {renderHeaderContent()}
-        </Animated.View>
-    );
-};
 
 // Profile List Item Component
 const ProfileListItem = ({ icon, title, subtitle, onPress, showChevron = true, rightComponent, iconColor }) => {
@@ -188,9 +78,19 @@ const SectionHeader = ({ title }) => (
 );
 
 // Main Profile Screen
-const ClientProfileScreen = ({ navigation }) => {
+const ClientProfileScreen = ({ navigation, route }) => {
     const [currentScreen, setCurrentScreen] = useState('main');
     const [fadeAnim] = useState(new Animated.Value(1));
+
+    // Check for route params
+    const targetScreen = route?.params?.screen;
+
+    useEffect(() => {
+        // If targetScreen is provided, navigate to that screen
+        if (targetScreen) {
+            navigateToScreen(targetScreen);
+        }
+    }, [targetScreen]);
 
     const navigateToScreen = (screenName) => {
         Animated.timing(fadeAnim, {
@@ -286,6 +186,7 @@ const MyProfileScreen = ({ onBack }) => {
 
     const [isEditing, setIsEditing] = useState(false);
     const [errors, setErrors] = useState({});
+    const scrollY = useRef(new Animated.Value(0)).current;
 
     const validateForm = () => {
         const newErrors = {};
@@ -311,9 +212,19 @@ const MyProfileScreen = ({ onBack }) => {
                 type="back"
                 title="My Profile"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <Animated.ScrollView
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                showsVerticalScrollIndicator={false}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
+            >
                 <View style={styles.profileEditHeader}>
                     <View style={styles.avatarContainer}>
                         <View style={styles.avatar}>
@@ -445,7 +356,7 @@ const MyProfileScreen = ({ onBack }) => {
                 )}
 
                 <View style={styles.bottomSpacing} />
-            </ScrollView>
+            </Animated.ScrollView>
         </View>
     );
 };
@@ -463,6 +374,7 @@ const ChangePasswordScreen = ({ onBack }) => {
         new: false,
         confirm: false,
     });
+    const scrollY = useRef(new Animated.Value(0)).current;
 
     const validateForm = () => {
         const newErrors = {};
@@ -488,9 +400,19 @@ const ChangePasswordScreen = ({ onBack }) => {
                 type="back"
                 title="Change Password"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <Animated.ScrollView
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                showsVerticalScrollIndicator={false}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
+            >
                 <View style={styles.passwordGuidance}>
                     <Feather name="shield" size={48} color={theme.colors.success} />
                     <Text style={styles.guidanceTitle}>Secure Your Account</Text>
@@ -572,7 +494,7 @@ const ChangePasswordScreen = ({ onBack }) => {
                 </View>
 
                 <View style={styles.bottomSpacing} />
-            </ScrollView>
+            </Animated.ScrollView>
         </View>
     );
 };
@@ -605,6 +527,7 @@ const CardRegistrationScreen = ({ onBack }) => {
         cvv: '',
         name: '',
     });
+    const scrollY = useRef(new Animated.Value(0)).current;
 
     const getCardIcon = (type) => {
         switch (type) {
@@ -686,13 +609,20 @@ const CardRegistrationScreen = ({ onBack }) => {
                 type="back"
                 title="Payment Methods"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <View style={styles.content}>
-                <FlatList
+            <View style={[styles.content, { paddingTop: getHeaderHeight() }]}>
+                <Animated.FlatList
                     data={cards}
                     renderItem={renderCard}
                     keyExtractor={(item) => item.id}
+                    scrollEventThrottle={16}
+                    onScroll={Animated.event(
+                        [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                        { useNativeDriver: false }
+                    )}
                     ListHeaderComponent={() => (
                         <View style={styles.cardHeader}>
                             <Text style={styles.cardHeaderTitle}>Saved Payment Methods</Text>
@@ -837,6 +767,7 @@ const CallHistoryScreen = ({ onBack }) => {
             status: 'Refunded'
         }
     ]);
+    const scrollY = useRef(new Animated.Value(0)).current;
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -890,13 +821,20 @@ const CallHistoryScreen = ({ onBack }) => {
                 type="back"
                 title="Call History"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <FlatList
+            <Animated.FlatList
                 data={callHistory}
                 renderItem={renderCallItem}
                 keyExtractor={(item) => item.id}
-                style={styles.content}
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
                 ListHeaderComponent={() => (
                     <View style={styles.historyHeader}>
                         <Text style={styles.historyHeaderTitle}>Your Interpretation Calls</Text>
@@ -949,6 +887,7 @@ const PaymentHistoryScreen = ({ onBack }) => {
             transactionId: 'TXN-2024-004'
         }
     ]);
+    const scrollY = useRef(new Animated.Value(0)).current;
 
     const renderPaymentItem = ({ item }) => (
         <View style={styles.paymentHistoryItem}>
@@ -983,13 +922,20 @@ const PaymentHistoryScreen = ({ onBack }) => {
                 type="back"
                 title="Payment History"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <FlatList
+            <Animated.FlatList
                 data={paymentHistory}
                 renderItem={renderPaymentItem}
                 keyExtractor={(item) => item.id}
-                style={styles.content}
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
                 ListHeaderComponent={() => (
                     <View style={styles.historyHeader}>
                         <Text style={styles.historyHeaderTitle}>Payment Transactions</Text>
@@ -1018,6 +964,7 @@ const LanguageCoverageScreen = ({ onBack }) => {
         { id: '11', from: 'Spanish', to: 'Portuguese', availability: '8AM-8PM EST', interpreters: 23 },
         { id: '12', from: 'French', to: 'Arabic', availability: '8AM-8PM EST', interpreters: 18 }
     ]);
+    const scrollY = useRef(new Animated.Value(0)).current;
 
     const renderLanguageItem = ({ item }) => (
         <View style={styles.languageItem}>
@@ -1047,13 +994,20 @@ const LanguageCoverageScreen = ({ onBack }) => {
                 type="back"
                 title="Language Coverage"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <FlatList
+            <Animated.FlatList
                 data={languages}
                 renderItem={renderLanguageItem}
                 keyExtractor={(item) => item.id}
-                style={styles.content}
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
                 ListHeaderComponent={() => (
                     <View style={styles.coverageHeader}>
                         <Text style={styles.coverageHeaderTitle}>Available Language Pairs</Text>
@@ -1068,15 +1022,27 @@ const LanguageCoverageScreen = ({ onBack }) => {
 
 // About Screen
 const AboutScreen = ({ onBack }) => {
+    const scrollY = useRef(new Animated.Value(0)).current;
+
     return (
         <View style={styles.container}>
             <DynamicHeader
                 type="back"
                 title="About LanguageAccess"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <Animated.ScrollView
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                showsVerticalScrollIndicator={false}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
+            >
                 <View style={styles.aboutHeader}>
                     <View style={[styles.appIconContainer, { backgroundColor: theme.colors.secondary }]}>
                         <Feather name="globe" size={48} color={theme.colors.text.white} />
@@ -1118,22 +1084,34 @@ const AboutScreen = ({ onBack }) => {
                 </View>
 
                 <View style={styles.bottomSpacing} />
-            </ScrollView>
+            </Animated.ScrollView>
         </View>
     );
 };
 
 // Terms Screen
 const TermsScreen = ({ onBack }) => {
+    const scrollY = useRef(new Animated.Value(0)).current;
+
     return (
         <View style={styles.container}>
             <DynamicHeader
                 type="back"
                 title="Terms of Use"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <Animated.ScrollView
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                showsVerticalScrollIndicator={false}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
+            >
                 <View style={styles.legalContent}>
                     <Text style={styles.legalTitle}>Terms of Use</Text>
                     <Text style={styles.lastUpdated}>Last updated: June 1, 2024</Text>
@@ -1180,22 +1158,34 @@ const TermsScreen = ({ onBack }) => {
                 </View>
 
                 <View style={styles.bottomSpacing} />
-            </ScrollView>
+            </Animated.ScrollView>
         </View>
     );
 };
 
 // Privacy Policy Screen
 const PrivacyPolicyScreen = ({ onBack }) => {
+    const scrollY = useRef(new Animated.Value(0)).current;
+
     return (
         <View style={styles.container}>
             <DynamicHeader
                 type="back"
                 title="Privacy Policy"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <Animated.ScrollView
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                showsVerticalScrollIndicator={false}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
+            >
                 <View style={styles.legalContent}>
                     <Text style={styles.legalTitle}>Privacy Policy</Text>
                     <Text style={styles.lastUpdated}>Last updated: June 1, 2024</Text>
@@ -1237,7 +1227,7 @@ const PrivacyPolicyScreen = ({ onBack }) => {
                 </View>
 
                 <View style={styles.bottomSpacing} />
-            </ScrollView>
+            </Animated.ScrollView>
         </View>
     );
 };
@@ -1250,6 +1240,7 @@ const ContactUsScreen = ({ onBack }) => {
         priority: 'normal'
     });
     const [showThankYou, setShowThankYou] = useState(false);
+    const scrollY = useRef(new Animated.Value(0)).current;
 
     const handleSubmit = () => {
         if (contactForm.subject.trim() && contactForm.message.trim()) {
@@ -1269,9 +1260,19 @@ const ContactUsScreen = ({ onBack }) => {
                 type="back"
                 title="Contact Us"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <Animated.ScrollView
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                showsVerticalScrollIndicator={false}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
+            >
                 <View style={styles.contactHeader}>
                     <Feather name="headphones" size={48} color={theme.colors.accent} />
                     <Text style={styles.contactTitle}>We're Here to Help</Text>
@@ -1358,21 +1359,34 @@ const ContactUsScreen = ({ onBack }) => {
                 </Modal>
 
                 <View style={styles.bottomSpacing} />
-            </ScrollView>
+            </Animated.ScrollView>
         </View>
     );
 };
 
 // Version Screen
 const VersionScreen = ({ onBack }) => {
+    const scrollY = useRef(new Animated.Value(0)).current;
+
     return (
         <View style={styles.container}>
             <DynamicHeader
                 type="back"
                 title="App Version"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+
+            <Animated.ScrollView
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                showsVerticalScrollIndicator={false}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
+            >
                 <View style={styles.versionHeader}>
                     <View style={[styles.appIconLarge, { backgroundColor: theme.colors.accent }]}>
                         <Feather name="smartphone" size={64} color={theme.colors.text.white} />
@@ -1416,7 +1430,7 @@ const VersionScreen = ({ onBack }) => {
                     </Text>
                 </View>
                 <View style={styles.bottomSpacing} />
-            </ScrollView>
+            </Animated.ScrollView>
         </View>
     );
 };
@@ -1593,6 +1607,24 @@ const DeleteAccountScreen = ({ onBack, onDeleteAccount }) => {
 // Main Profile Screen Component
 const MainProfileScreen = ({ onNavigate, onBack }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
+    const scrollY = useRef(new Animated.Value(0)).current;
+
+    // Dynamic user data state - this would typically come from your backend/API
+    const [userData, setUserData] = useState({
+        firstName: 'John',
+        lastName: 'Anderson',
+        email: 'john.anderson@company.com',
+        company: 'Tech Solutions Inc.',
+        jobTitle: 'Operations Manager',
+        profileCompletion: 85,
+        isVerified: true,
+        memberSince: '2023',
+        totalCalls: 24,
+        rating: 4.8,
+        avatar: null, // Could be an image URL from backend
+        status: 'active', // active, busy, offline
+        lastActive: 'Now'
+    });
 
     useEffect(() => {
         Animated.timing(fadeAnim, {
@@ -1600,6 +1632,10 @@ const MainProfileScreen = ({ onNavigate, onBack }) => {
             duration: 600,
             useNativeDriver: false,
         }).start();
+
+        // Simulate fetching user data from backend
+        // In real app, you'd call your API here
+        // fetchUserProfile().then(setUserData);
     }, []);
 
     const handleSignOut = () => {
@@ -1613,27 +1649,158 @@ const MainProfileScreen = ({ onNavigate, onBack }) => {
         );
     };
 
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'active': return theme.colors.success;
+            case 'busy': return theme.colors.warning;
+            case 'offline': return theme.colors.text.light;
+            default: return theme.colors.text.light;
+        }
+    };
+
+    const getCompletionColor = (percentage) => {
+        if (percentage >= 80) return theme.colors.success;
+        if (percentage >= 60) return theme.colors.warning;
+        return theme.colors.error;
+    };
+
     return (
         <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
             <DynamicHeader
                 type="back"
                 title="Profile"
                 onBack={onBack}
+                scrollY={scrollY}
+                hideOnScroll={true}
             />
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                {/* User Profile Header */}
-                <View style={styles.profileHeader}>
-                    <View style={styles.avatarContainer}>
-                        <View style={styles.avatar}>
-                            <Feather name="user" size={40} color={theme.colors.text.white} />
+            <Animated.ScrollView
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                showsVerticalScrollIndicator={false}
+                scrollEventThrottle={16}
+                onScroll={Animated.event(
+                    [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                    { useNativeDriver: false }
+                )}
+            >
+                {/* Enhanced User Profile Header */}
+                <View style={styles.enhancedProfileHeader}>
+                    {/* Background Gradient Effect */}
+                    <View style={styles.profileHeaderBackground} />
+
+                    <View style={styles.profileHeaderContent}>
+                        {/* Left Section - Avatar and Basic Info */}
+                        <View style={styles.profileHeaderLeft}>
+                            <View style={styles.compactAvatarContainer}>
+                                <View style={styles.compactAvatar}>
+                                    {userData.avatar ? (
+                                        <Image source={{ uri: userData.avatar }} style={styles.avatarImage} />
+                                    ) : (
+                                        <Text style={styles.avatarText}>
+                                            {userData.firstName.charAt(0)}{userData.lastName.charAt(0)}
+                                        </Text>
+                                    )}
+                                </View>
+
+                                {/* Status Indicator */}
+                                <View style={[styles.statusIndicator, { backgroundColor: getStatusColor(userData.status) }]} />
+
+                                {/* Edit Avatar Button */}
+                                <TouchableOpacity style={styles.compactEditAvatarButton}>
+                                    <Feather name="camera" size={12} color={theme.colors.text.white} />
+                                </TouchableOpacity>
+                            </View>
+
+                            <View style={styles.profileBasicInfo}>
+                                <View style={styles.nameContainer}>
+                                    <Text style={styles.compactProfileName}>
+                                        {userData.firstName} {userData.lastName}
+                                    </Text>
+                                    {userData.isVerified && (
+                                        <Feather name="check-circle" size={16} color={theme.colors.success} style={styles.verifiedIcon} />
+                                    )}
+                                </View>
+                                <Text style={styles.compactProfileEmail} numberOfLines={1}>
+                                    {userData.email}
+                                </Text>
+                                <Text style={styles.compactProfileCompany} numberOfLines={1}>
+                                    {userData.jobTitle} • {userData.company}
+                                </Text>
+                            </View>
                         </View>
-                        <TouchableOpacity style={styles.editAvatarButton}>
-                            <Feather name="camera" size={16} color={theme.colors.text.white} />
-                        </TouchableOpacity>
+
+                        {/* Right Section - Stats and Actions */}
+                        <View style={styles.profileHeaderRight}>
+                            {/* Profile Completion */}
+                            <View style={styles.profileCompletionContainer}>
+                                <View style={styles.profileCompletionHeader}>
+                                    <Text style={styles.completionLabel}>Profile</Text>
+                                    <Text style={[styles.completionPercentage, { color: getCompletionColor(userData.profileCompletion) }]}>
+                                        {userData.profileCompletion}%
+                                    </Text>
+                                </View>
+                                <View style={styles.progressBarContainer}>
+                                    <View style={styles.progressBarBackground} />
+                                    <View
+                                        style={[
+                                            styles.progressBarFill,
+                                            {
+                                                width: `${userData.profileCompletion}%`,
+                                                backgroundColor: getCompletionColor(userData.profileCompletion)
+                                            }
+                                        ]}
+                                    />
+                                </View>
+                            </View>
+
+                            {/* Quick Stats */}
+                            <View style={styles.quickStats}>
+                                <View style={styles.statItem}>
+                                    <Text style={styles.statValue}>{userData.totalCalls}</Text>
+                                    <Text style={styles.statLabel}>Calls</Text>
+                                </View>
+                                <View style={styles.statDivider} />
+                                <View style={styles.statItem}>
+                                    <View style={styles.ratingContainer}>
+                                        <Text style={styles.statValue}>{userData.rating}</Text>
+                                        <Feather name="star" size={12} color={theme.colors.accent} />
+                                    </View>
+                                    <Text style={styles.statLabel}>Rating</Text>
+                                </View>
+                                <View style={styles.statDivider} />
+                                <View style={styles.statItem}>
+                                    <Text style={styles.statValue}>{userData.memberSince}</Text>
+                                    <Text style={styles.statLabel}>Since</Text>
+                                </View>
+                            </View>
+
+                            {/* Quick Actions */}
+                            <View style={styles.quickActions}>
+                                <TouchableOpacity
+                                    style={styles.quickActionButton}
+                                    onPress={() => onNavigate('myProfile')}
+                                >
+                                    <Feather name="edit-3" size={14} color={theme.colors.primary} />
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.quickActionButton}
+                                    onPress={() => onNavigate('callHistory')}
+                                >
+                                    <Feather name="phone" size={14} color={theme.colors.secondary} />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
                     </View>
-                    <Text style={styles.profileName}>John Anderson</Text>
-                    <Text style={styles.profileEmail}>john.anderson@company.com</Text>
+
+                    {/* Last Active Status */}
+                    <View style={styles.lastActiveContainer}>
+                        <View style={styles.lastActiveContent}>
+                            <Feather name="clock" size={12} color={theme.colors.text.light} />
+                            <Text style={styles.lastActiveText}>
+                                Last active: {userData.lastActive}
+                            </Text>
+                        </View>
+                    </View>
                 </View>
 
                 {/* Profile Settings Section */}
@@ -1750,7 +1917,7 @@ const MainProfileScreen = ({ onNavigate, onBack }) => {
                 </View>
 
                 <View style={styles.bottomSpacing} />
-            </ScrollView>
+            </Animated.ScrollView>
         </Animated.View>
     );
 };
@@ -1764,35 +1931,6 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         paddingHorizontal: theme.spacing.md,
-    },
-
-    // Header Styles
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: theme.spacing.md,
-        paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight + 10,
-        paddingBottom: theme.spacing.md,
-        backgroundColor: theme.colors.surface,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.border,
-    },
-    headerLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-    },
-    backButton: {
-        marginRight: theme.spacing.md,
-    },
-    headerTitle: {
-        ...theme.typography.h2,
-        color: theme.colors.text.primary,
-    },
-    headerRight: {
-        flexDirection: 'row',
-        alignItems: 'center',
     },
 
     // Profile List Styles
@@ -1894,6 +2032,8 @@ const styles = StyleSheet.create({
         borderRadius: theme.borderRadius.md,
         marginBottom: theme.spacing.md,
         overflow: 'hidden',
+        paddingHorizontal: theme.spacing.md,
+        paddingVertical: theme.spacing.lg,
     },
     inputGroup: {
         marginBottom: theme.spacing.md,
@@ -1938,6 +2078,9 @@ const styles = StyleSheet.create({
     },
     cardContent: {
         flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
     },
     cardNumber: {
         ...theme.typography.bodyMedium,
@@ -1954,6 +2097,7 @@ const styles = StyleSheet.create({
     },
     deleteButton: {
         marginLeft: theme.spacing.sm,
+        padding: theme.spacing.sm,
     },
     cardHeader: {
         paddingHorizontal: theme.spacing.md,
@@ -2649,13 +2793,6 @@ const styles = StyleSheet.create({
         marginBottom: theme.spacing.md,
         overflow: 'hidden',
     },
-    sectionHeader: {
-        paddingHorizontal: theme.spacing.md,
-        paddingVertical: theme.spacing.sm,
-        backgroundColor: theme.colors.surfaceLight,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.border,
-    },
     sectionHeaderText: {
         ...theme.typography.bodyMedium,
         color: theme.colors.text.secondary,
@@ -2664,22 +2801,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
 
-    // Header Styles
-    headerTitleSecondary: {
-        ...theme.typography.h3,
-        color: theme.colors.text.primary,
-        marginLeft: theme.spacing.md,
-    },
-    headerActions: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    headerButton: {
-        padding: theme.spacing.sm,
-        marginLeft: theme.spacing.sm,
-    },
-
-    // Profile Header Styles
+    // Avatar Styles
     avatar: {
         width: 100,
         height: 100,
@@ -2763,6 +2885,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingVertical: theme.spacing.md,
+        paddingHorizontal: theme.spacing.md,
         borderBottomWidth: 1,
         borderBottomColor: theme.colors.border,
     },
@@ -2856,6 +2979,218 @@ const styles = StyleSheet.create({
     // Bottom Spacing
     bottomSpacing: {
         height: theme.spacing.xl,
+    },
+
+    // Enhanced User Profile Styles
+    enhancedProfileHeader: {
+        backgroundColor: theme.colors.surface,
+        borderRadius: theme.borderRadius.lg,
+        marginBottom: theme.spacing.md,
+        overflow: 'hidden',
+        elevation: 3,
+        shadowColor: theme.colors.shadow,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+    },
+    profileHeaderBackground: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        height: '75%',
+        backgroundColor: theme.colors.primary,
+        borderTopLeftRadius: theme.borderRadius.lg,
+        borderTopRightRadius: theme.borderRadius.lg,
+    },
+    profileHeaderContent: {
+        flexDirection: 'row',
+        padding: theme.spacing.lg,
+        alignItems: 'flex-start',
+        minHeight: 120,
+    },
+    profileHeaderLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    compactAvatarContainer: {
+        position: 'relative',
+        marginRight: theme.spacing.md,
+    },
+    compactAvatar: {
+        width: 70,
+        height: 70,
+        borderRadius: 35,
+        backgroundColor: theme.colors.primaryLight,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 3,
+        borderColor: theme.colors.surface,
+        overflow: 'hidden',
+    },
+    avatarImage: {
+        width: '100%',
+        height: '100%',
+        borderRadius: 32,
+    },
+    avatarText: {
+        fontSize: 24,
+        fontWeight: '700',
+        color: theme.colors.text.white,
+    },
+    statusIndicator: {
+        position: 'absolute',
+        bottom: 2,
+        right: 2,
+        width: 14,
+        height: 14,
+        borderRadius: 7,
+        borderWidth: 2,
+        borderColor: theme.colors.surface,
+    },
+    compactEditAvatarButton: {
+        position: 'absolute',
+        top: -5,
+        right: -5,
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: theme.colors.accent,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: theme.colors.surface,
+    },
+    profileBasicInfo: {
+        flex: 1,
+        justifyContent: 'center',
+    },
+    nameContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: theme.spacing.xs,
+    },
+    compactProfileName: {
+        ...theme.typography.h3,
+        color: theme.colors.text.white,
+        fontWeight: '700',
+    },
+    verifiedIcon: {
+        marginLeft: theme.spacing.xs,
+    },
+    compactProfileEmail: {
+        ...theme.typography.caption,
+        color: theme.colors.text.white,
+        opacity: 0.9,
+        marginBottom: 2,
+    },
+    compactProfileCompany: {
+        ...theme.typography.caption,
+        color: theme.colors.text.white,
+        opacity: 0.8,
+    },
+    profileHeaderRight: {
+        alignItems: 'flex-end',
+        justifyContent: 'space-between',
+        minHeight: 70,
+    },
+    profileCompletionContainer: {
+        alignItems: 'flex-end',
+        marginBottom: theme.spacing.sm,
+        minWidth: 80,
+    },
+    profileCompletionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: theme.spacing.xs,
+    },
+    completionLabel: {
+        ...theme.typography.small,
+        color: theme.colors.text.white,
+        opacity: 0.9,
+        marginRight: theme.spacing.xs,
+    },
+    completionPercentage: {
+        ...theme.typography.bodyMedium,
+        fontWeight: '700',
+    },
+    progressBarContainer: {
+        width: 60,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        overflow: 'hidden',
+    },
+    progressBarBackground: {
+        ...StyleSheet.absoluteFillObject,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    progressBarFill: {
+        height: '100%',
+        borderRadius: 3,
+    },
+    quickStats: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: theme.spacing.sm,
+    },
+    statItem: {
+        alignItems: 'center',
+        minWidth: 35,
+    },
+    statValue: {
+        ...theme.typography.small,
+        color: theme.colors.text.white,
+        fontWeight: '600',
+        fontSize: 14,
+    },
+    statLabel: {
+        ...theme.typography.small,
+        color: theme.colors.text.white,
+        opacity: 0.8,
+        fontSize: 10,
+    },
+    statDivider: {
+        width: 1,
+        height: 20,
+        backgroundColor: 'rgba(255, 255, 255, 0.3)',
+        marginHorizontal: theme.spacing.sm,
+    },
+    ratingContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    quickActions: {
+        flexDirection: 'row',
+        gap: theme.spacing.xs,
+    },
+    quickActionButton: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.3)',
+    },
+    lastActiveContainer: {
+        backgroundColor: theme.colors.surface,
+        paddingHorizontal: theme.spacing.lg,
+        paddingBottom: theme.spacing.md,
+        paddingTop: theme.spacing.xs,
+    },
+    lastActiveContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    lastActiveText: {
+        ...theme.typography.small,
+        color: theme.colors.text.secondary,
+        marginLeft: theme.spacing.xs,
     },
 });
 

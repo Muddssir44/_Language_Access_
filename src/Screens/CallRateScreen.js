@@ -14,82 +14,12 @@ import {
     Slider,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import DynamicHeader from '../Components/DynamicHeader';
+import { theme, getHeaderHeight } from '../Components/theme';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-// Theme (reused from InterpreterProfileScreen)
-const theme = {
-    colors: {
-        primary: '#4F46E5',
-        primaryLight: '#818CF8',
-        secondary: '#06B6D4',
-        accent: '#F59E0B',
-        success: '#10B981',
-        warning: '#F59E0B',
-        error: '#EF4444',
-        background: '#FAFAFA',
-        surface: '#FFFFFF',
-        surfaceLight: '#F8FAFC',
-        text: {
-            primary: '#1F2937',
-            secondary: '#6B7280',
-            light: '#9CA3AF',
-            white: '#FFFFFF',
-        },
-        border: '#E5E7EB',
-        shadow: 'rgba(0, 0, 0, 0.1)',
-    },
-    spacing: {
-        xs: 4,
-        sm: 8,
-        md: 16,
-        lg: 24,
-        xl: 32,
-        xxl: 48,
-    },
-    borderRadius: {
-        sm: 8,
-        md: 12,
-        lg: 16,
-        xl: 24,
-    },
-    typography: {
-        h1: { fontSize: 28, fontWeight: '700' },
-        h2: { fontSize: 24, fontWeight: '600' },
-        h3: { fontSize: 20, fontWeight: '600' },
-        body: { fontSize: 16, fontWeight: '400' },
-        bodyMedium: { fontSize: 16, fontWeight: '500' },
-        caption: { fontSize: 14, fontWeight: '400' },
-        small: { fontSize: 12, fontWeight: '400' },
-    },
-};
-
-// Dynamic Header Component
-const DynamicHeader = ({ title, onBack }) => {
-    const fadeAnim = useRef(new Animated.Value(0)).current;
-
-    useEffect(() => {
-        Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: false,
-        }).start();
-    }, []);
-
-    return (
-        <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
-            <StatusBar barStyle="dark-content" backgroundColor={theme.colors.surface} />
-            <View style={styles.headerLeft}>
-                <TouchableOpacity style={styles.headerButton} onPress={onBack} activeOpacity={0.7}>
-                    <Feather name="chevron-left" size={24} color={theme.colors.text.primary} />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>{title}</Text>
-            </View>
-        </Animated.View>
-    );
-};
-
-const CallRateScreen = ({ onBack }) => {
+const CallRateScreen = ({ navigation }) => {
     const [rates, setRates] = useState({
         audio: 2.50,
         video: 3.00,
@@ -149,6 +79,10 @@ const CallRateScreen = ({ onBack }) => {
 
     const handleRateChange = (callType, value) => {
         setTempRates({ ...tempRates, [callType]: value });
+    };
+
+    const handleBack = () => {
+        navigation.goBack();
     };
 
     const handleSave = () => {
@@ -247,9 +181,16 @@ const CallRateScreen = ({ onBack }) => {
 
     return (
         <View style={styles.container}>
-            <DynamicHeader title="Manage Call Rates" onBack={onBack} />
+            <DynamicHeader
+                type="back"
+                title="Manage Call Rates"
+                onBack={handleBack}
+            />
 
-            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+            <ScrollView
+                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                showsVerticalScrollIndicator={false}
+            >
                 <View style={styles.infoSection}>
                     <Feather name="dollar-sign" size={48} color={theme.colors.accent} />
                     <Text style={styles.infoTitle}>Set Your Call Rates</Text>
@@ -342,33 +283,7 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
-        paddingHorizontal: theme.spacing.md,
-    },
-
-    // Header Styles
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: theme.spacing.md,
-        paddingTop: Platform.OS === 'ios' ? 50 : StatusBar.currentHeight + 10,
-        paddingBottom: theme.spacing.md,
-        backgroundColor: theme.colors.surface,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.border,
-    },
-    headerLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-    },
-    headerTitle: {
-        ...theme.typography.h3,
-        color: theme.colors.text.primary,
-        marginLeft: theme.spacing.md,
-    },
-    headerButton: {
-        padding: theme.spacing.sm,
+        paddingHorizontal: theme.spacing.lg,
     },
 
     // Info Section

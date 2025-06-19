@@ -15,55 +15,10 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import LanguagePairModal from '../Components/LanguagePairModal';
+import DynamicHeader from '../Components/DynamicHeader';
+import { theme, getHeaderHeight } from '../Components/theme';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-
-// Consistent theme from previous screens
-const theme = {
-    colors: {
-        primary: '#4F46E5',
-        primaryLight: '#818CF8',
-        secondary: '#06B6D4',
-        accent: '#F59E0B',
-        success: '#10B981',
-        warning: '#F59E0B',
-        error: '#EF4444',
-        background: '#FAFAFA',
-        surface: '#FFFFFF',
-        surfaceLight: '#F8FAFC',
-        text: {
-            primary: '#1F2937',
-            secondary: '#6B7280',
-            light: '#9CA3AF',
-            white: '#FFFFFF',
-        },
-        border: '#E5E7EB',
-        shadow: 'rgba(0, 0, 0, 0.1)',
-    },
-    spacing: {
-        xs: 4,
-        sm: 8,
-        md: 16,
-        lg: 24,
-        xl: 32,
-        xxl: 48,
-    },
-    borderRadius: {
-        sm: 8,
-        md: 12,
-        lg: 16,
-        xl: 24,
-    },
-    typography: {
-        h1: { fontSize: 28, fontWeight: '700' },
-        h2: { fontSize: 24, fontWeight: '600' },
-        h3: { fontSize: 20, fontWeight: '600' },
-        body: { fontSize: 16, fontWeight: '400' },
-        bodyMedium: { fontSize: 16, fontWeight: '500' },
-        caption: { fontSize: 14, fontWeight: '400' },
-        small: { fontSize: 12, fontWeight: '400' },
-    },
-};
 
 // Sample interpreter data
 const interpretersData = [
@@ -128,71 +83,6 @@ const interpretersData = [
         description: 'Experienced legal interpreter with specialization in international law and academic conferences.',
     },
 ];
-
-// Reusable Dynamic Header Component
-const DynamicHeader = ({
-    type = 'back',
-    title = 'Find an Interpreter',
-    onBack,
-    onBell,
-    onProfile,
-    onFavorite,
-    showFavorite = false
-}) => {
-    const fadeAnim = useRef(new Animated.Value(0)).current;
-
-    useEffect(() => {
-        Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: false,
-        }).start();
-    }, []);
-
-    const renderHeaderContent = () => {
-        switch (type) {
-            case 'home':
-                return (
-                    <>
-                        <Text style={styles.headerTitle}>LanguageAccess</Text>
-                        <View style={styles.headerActions}>
-                            <TouchableOpacity style={styles.headerButton} onPress={onBell} activeOpacity={0.7}>
-                                <Feather name="bell" size={24} color={theme.colors.text.primary} />
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.headerButton} onPress={onProfile} activeOpacity={0.7}>
-                                <Feather name="user" size={24} color={theme.colors.text.primary} />
-                            </TouchableOpacity>
-                        </View>
-                    </>
-                );
-            case 'back':
-                return (
-                    <>
-                        <View style={styles.headerLeft}>
-                            <TouchableOpacity style={styles.headerButton} onPress={onBack} activeOpacity={0.7}>
-                                <Feather name="chevron-left" size={24} color={theme.colors.text.primary} />
-                            </TouchableOpacity>
-                            <Text style={styles.headerTitleSecondary}>{title}</Text>
-                        </View>
-                        {showFavorite && (
-                            <TouchableOpacity style={styles.headerButton} onPress={onFavorite} activeOpacity={0.7}>
-                                <Feather name="star" size={24} color={theme.colors.text.primary} />
-                            </TouchableOpacity>
-                        )}
-                    </>
-                );
-            default:
-                return <Text style={styles.headerTitleSecondary}>{title}</Text>;
-        }
-    };
-
-    return (
-        <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
-            <StatusBar barStyle="dark-content" backgroundColor={theme.colors.surface} />
-            {renderHeaderContent()}
-        </Animated.View>
-    );
-};
 
 // Top Prompt Bar Component
 const TopPromptBar = ({ onPostJob }) => {
@@ -729,9 +619,12 @@ const InterpreterCard = ({ interpreter, onMessage, onAudioCall, onVideoCall, ind
 };
 
 // Main Find Interpreter Screen Component
-const FindInterpreterScreen = ({ navigation }) => {
+const FindInterpreterScreen = ({ navigation, route }) => {
     const [searchText, setSearchText] = useState('');
+    const [interpreters, setInterpreters] = useState(interpretersData);
+    const [loading, setLoading] = useState(false);
     const [showFilters, setShowFilters] = useState(false);
+    const [languageModalVisible, setLanguageModalVisible] = useState(false);
     const [sortBy, setSortBy] = useState('rating');
     const [filters, setFilters] = useState({
         languageFrom: 'English',
@@ -739,11 +632,11 @@ const FindInterpreterScreen = ({ navigation }) => {
         status: 'all',
         expertise: 'All',
     });
-    const [interpreters, setInterpreters] = useState(interpretersData);
-    const [loading, setLoading] = useState(false);
-    const [languageModalVisible, setLanguageModalVisible] = useState(false);
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
+
+    // Check for route params
+    const showCategories = route?.params?.showCategories || false;
 
     useEffect(() => {
         Animated.timing(fadeAnim, {
@@ -751,11 +644,15 @@ const FindInterpreterScreen = ({ navigation }) => {
             duration: 600,
             useNativeDriver: false,
         }).start();
-    }, []);
+
+        // If showCategories is true, expand filters
+        if (showCategories) {
+            setShowFilters(true);
+        }
+    }, [showCategories]);
 
     const handleSearch = (text) => {
         setSearchText(text);
-        // Implement search filtering logic here
         filterInterpreters(text, filters, sortBy);
     };
 
@@ -771,69 +668,95 @@ const FindInterpreterScreen = ({ navigation }) => {
     };
 
     const handleLanguagePairSelect = ({ languageFrom, languageTo }) => {
-        const newFilters = { ...filters, languageFrom, languageTo };
-        setFilters(newFilters);
-        filterInterpreters(searchText, newFilters, sortBy);
+        setFilters(prev => ({
+            ...prev,
+            languageFrom,
+            languageTo,
+        }));
+        setLanguageModalVisible(false);
+        filterInterpreters(searchText, { ...filters, languageFrom, languageTo }, sortBy);
     };
 
     const filterInterpreters = (search, currentFilters, currentSort) => {
-        let filtered = [...interpretersData];
-
-        // Apply search filter
-        if (search) {
-            filtered = filtered.filter(interpreter =>
+        let filtered = interpretersData.filter(interpreter => {
+            // Search filter
+            const searchMatch = search === '' ||
                 interpreter.name.toLowerCase().includes(search.toLowerCase()) ||
                 interpreter.languages.some(lang => lang.toLowerCase().includes(search.toLowerCase())) ||
-                interpreter.expertise.some(exp => exp.toLowerCase().includes(search.toLowerCase()))
-            );
-        }
+                interpreter.expertise.some(exp => exp.toLowerCase().includes(search.toLowerCase()));
 
-        // Apply status filter
-        if (currentFilters.status !== 'all') {
-            filtered = filtered.filter(interpreter => interpreter.status === currentFilters.status);
-        }
+            // Language filter
+            const languageMatch = currentFilters.languageFrom === 'Any' ||
+                interpreter.languages.includes(currentFilters.languageFrom);
+            const languageToMatch = currentFilters.languageTo === 'Any' ||
+                interpreter.languages.includes(currentFilters.languageTo);
 
-        // Apply expertise filter
-        if (currentFilters.expertise !== 'All') {
-            filtered = filtered.filter(interpreter =>
-                interpreter.expertise.includes(currentFilters.expertise)
-            );
-        }
+            // Status filter
+            const statusMatch = currentFilters.status === 'all' ||
+                interpreter.status === currentFilters.status;
 
-        // Apply sorting
-        filtered.sort((a, b) => {
-            switch (currentSort) {
-                case 'rating':
-                    return b.rating - a.rating;
-                case 'experience':
-                    return b.yearsExperience - a.yearsExperience;
-                case 'price':
-                    return a.pricePerMinute - b.pricePerMinute;
-                case 'newest':
-                    return b.completedJobs - a.completedJobs; // Using completed jobs as proxy for "newest"
-                default:
-                    return 0;
-            }
+            // Expertise filter
+            const expertiseMatch = currentFilters.expertise === 'All' ||
+                interpreter.expertise.includes(currentFilters.expertise);
+
+            return searchMatch && languageMatch && languageToMatch && statusMatch && expertiseMatch;
         });
+
+        // Sort
+        switch (currentSort) {
+            case 'rating':
+                filtered.sort((a, b) => b.rating - a.rating);
+                break;
+            case 'price':
+                filtered.sort((a, b) => a.pricePerMinute - b.pricePerMinute);
+                break;
+            case 'experience':
+                filtered.sort((a, b) => b.yearsExperience - a.yearsExperience);
+                break;
+            case 'response':
+                filtered.sort((a, b) => parseInt(a.responseTime.match(/\d+/)[0]) - parseInt(b.responseTime.match(/\d+/)[0]));
+                break;
+            default:
+                break;
+        }
 
         setInterpreters(filtered);
     };
 
     const handlePostJob = () => {
-        // Navigate to Post Job screen
-        console.log('Navigate to Post Job screen');
+        navigation.navigate('PostJob');
     };
 
     const handleMessage = (interpreter) => {
-        Alert.alert('Message', `Starting conversation with ${interpreter.name}`);
+        navigation.navigate('Messages', { interpreterId: interpreter.id });
     };
 
     const handleAudioCall = (interpreter) => {
-        Alert.alert('Audio Call', `Calling ${interpreter.name}...`);
+        navigation.navigate('PostJob', {
+            interpreterId: interpreter.id,
+            method: 'audio'
+        });
     };
 
     const handleVideoCall = (interpreter) => {
-        Alert.alert('Video Call', `Starting video call with ${interpreter.name}...`);
+        navigation.navigate('PostJob', {
+            interpreterId: interpreter.id,
+            method: 'video'
+        });
+    };
+
+    const handleBack = () => {
+        navigation.goBack();
+    };
+
+    const handleNotification = () => {
+        // Navigate to notifications
+        navigation.navigate('Notifications');
+        console.log('Open notifications');
+    };
+
+    const handleProfile = () => {
+        navigation.navigate('ClientProfile');
     };
 
     const renderInterpreterItem = ({ item, index }) => (
@@ -851,10 +774,14 @@ const FindInterpreterScreen = ({ navigation }) => {
             <DynamicHeader
                 type="back"
                 title="Find an Interpreter"
-                onBack={() => console.log('Navigate back')}
+                onBack={handleBack}
+                onBell={handleNotification}
+                onProfile={handleProfile}
+                showBell={true}
+                showProfile={true}
             />
 
-            <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+            <Animated.View style={[styles.content, { opacity: fadeAnim, paddingTop: getHeaderHeight() }]}>
                 {/* Top Prompt Bar */}
                 <TopPromptBar onPostJob={handlePostJob} />
 
@@ -888,8 +815,6 @@ const FindInterpreterScreen = ({ navigation }) => {
                 </View>
 
                 {/* Interpreters List */}
-                {/* Continuing from where the script left off - after renderInterpreterItem function */}
-
                 <FlatList
                     data={interpreters}
                     renderItem={renderInterpreterItem}
@@ -946,47 +871,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,
-    },
-
-    // Header Styles
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: theme.spacing.md,
-        paddingTop: theme.spacing.lg,
-        paddingBottom: theme.spacing.md,
-        backgroundColor: theme.colors.surface,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.border,
-        elevation: 2,
-        shadowColor: theme.colors.shadow,
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-    },
-    headerTitle: {
-        ...theme.typography.h2,
-        color: theme.colors.text.primary,
-    },
-    headerTitleSecondary: {
-        ...theme.typography.h3,
-        color: theme.colors.text.primary,
-        marginLeft: theme.spacing.sm,
-    },
-    headerActions: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    headerLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flex: 1,
-    },
-    headerButton: {
-        padding: theme.spacing.sm,
-        borderRadius: theme.borderRadius.sm,
-        marginHorizontal: theme.spacing.xs,
     },
 
     // Content Styles
@@ -1249,6 +1133,7 @@ const styles = StyleSheet.create({
         zIndex: 1000,
         minWidth: 200,
         overflow: 'hidden',
+        minHeight: 215,
     },
     sortingOption: {
         flexDirection: 'row',

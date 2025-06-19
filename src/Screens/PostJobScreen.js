@@ -16,120 +16,10 @@ import {
     StyleSheet,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import DynamicHeader from '../Components/DynamicHeader';
+import { theme, getHeaderHeight } from '../Components/theme';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-
-// Reuse the same theme from Home Screen for consistency
-const theme = {
-    colors: {
-        primary: '#4F46E5',
-        primaryLight: '#818CF8',
-        secondary: '#06B6D4',
-        accent: '#F59E0B',
-        success: '#10B981',
-        warning: '#F59E0B',
-        error: '#EF4444',
-        background: '#FAFAFA',
-        surface: '#FFFFFF',
-        surfaceLight: '#F8FAFC',
-        text: {
-            primary: '#1F2937',
-            secondary: '#6B7280',
-            light: '#9CA3AF',
-            white: '#FFFFFF',
-        },
-        border: '#E5E7EB',
-        shadow: 'rgba(0, 0, 0, 0.1)',
-    },
-    spacing: {
-        xs: 4,
-        sm: 8,
-        md: 16,
-        lg: 24,
-        xl: 32,
-        xxl: 48,
-    },
-    borderRadius: {
-        sm: 8,
-        md: 12,
-        lg: 16,
-        xl: 24,
-    },
-    typography: {
-        h1: { fontSize: 28, fontWeight: '700' },
-        h2: { fontSize: 24, fontWeight: '600' },
-        h3: { fontSize: 20, fontWeight: '600' },
-        body: { fontSize: 16, fontWeight: '400' },
-        bodyMedium: { fontSize: 16, fontWeight: '500' },
-        caption: { fontSize: 14, fontWeight: '400' },
-        small: { fontSize: 12, fontWeight: '400' },
-    },
-};
-
-// Reusable Dynamic Header Component (consistent with Home Screen)
-const DynamicHeader = ({
-    type = 'back',
-    title = 'Post a Job',
-    onBack,
-    onBell,
-    onProfile,
-    onFavorite,
-    showFavorite = false
-}) => {
-    const fadeAnim = useRef(new Animated.Value(0)).current;
-
-    useEffect(() => {
-        Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: false,
-        }).start();
-    }, []);
-
-    const renderHeaderContent = () => {
-        switch (type) {
-            case 'home':
-                return (
-                    <>
-                        <Text style={styles.headerTitle}>LanguageAccess</Text>
-                        <View style={styles.headerActions}>
-                            <TouchableOpacity style={styles.headerButton} onPress={onBell} activeOpacity={0.7}>
-                                <Feather name="bell" size={24} color={theme.colors.text.primary} />
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.headerButton} onPress={onProfile} activeOpacity={0.7}>
-                                <Feather name="user" size={24} color={theme.colors.text.primary} />
-                            </TouchableOpacity>
-                        </View>
-                    </>
-                );
-            case 'back':
-                return (
-                    <>
-                        <View style={styles.headerLeft}>
-                            <TouchableOpacity style={styles.headerButton} onPress={onBack} activeOpacity={0.7}>
-                                <Feather name="chevron-left" size={24} color={theme.colors.text.primary} />
-                            </TouchableOpacity>
-                            <Text style={styles.headerTitleSecondary}>{title}</Text>
-                        </View>
-                        {showFavorite && (
-                            <TouchableOpacity style={styles.headerButton} onPress={onFavorite} activeOpacity={0.7}>
-                                <Feather name="star" size={24} color={theme.colors.text.primary} />
-                            </TouchableOpacity>
-                        )}
-                    </>
-                );
-            default:
-                return <Text style={styles.headerTitleSecondary}>{title}</Text>;
-        }
-    };
-
-    return (
-        <Animated.View style={[styles.header, { opacity: fadeAnim }]}>
-            <StatusBar barStyle="dark-content" backgroundColor={theme.colors.surface} />
-            {renderHeaderContent()}
-        </Animated.View>
-    );
-};
 
 // Job Card Component
 const JobCard = ({ job, onPress, index }) => {
@@ -348,7 +238,7 @@ const FloatingActionButton = ({ onPress }) => {
 };
 
 // Job Creation Modal Component
-const JobCreationModal = ({ visible, onClose, onSubmit }) => {
+const JobCreationModal = ({ visible, onClose, onSubmit, isUrgent, interpreterId, isInstantBook }) => {
     const [formData, setFormData] = useState({
         title: '',
         languageFrom: 'English',
@@ -654,7 +544,7 @@ const JobCreationModal = ({ visible, onClose, onSubmit }) => {
 };
 
 // Main Post Job Screen Component
-const PostJobScreen = () => {
+const PostJobScreen = ({ navigation, route }) => {
     const [jobs, setJobs] = useState([
         {
             id: '1',
@@ -683,26 +573,58 @@ const PostJobScreen = () => {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const fadeAnim = useRef(new Animated.Value(0)).current;
 
+    // Check for route params
+    const isUrgent = route?.params?.urgent || false;
+    const interpreterId = route?.params?.interpreterId;
+    const isInstantBook = route?.params?.instantBook || false;
+
     useEffect(() => {
         Animated.timing(fadeAnim, {
             toValue: 1,
             duration: 600,
             useNativeDriver: false,
         }).start();
-    }, []);
+
+        // If urgent booking or instant book, show modal immediately
+        if (isUrgent || isInstantBook) {
+            setShowCreateModal(true);
+        }
+    }, [isUrgent, isInstantBook]);
 
     const handleCreateJob = () => {
         setShowCreateModal(true);
     };
 
     const handleJobPress = (job) => {
-        Alert.alert('Job Details', `Viewing details for: ${job.title}`);
+        // Navigate to job details or applications
+        console.log('View job details:', job.title);
+        // Could navigate to a job details screen
+        // navigation.navigate('JobDetails', { jobId: job.id });
     };
 
     const handleJobSubmit = (jobData) => {
         setJobs([jobData, ...jobs]);
         setShowCreateModal(false);
         Alert.alert('Success!', 'Your job has been posted successfully.');
+
+        // If this was an urgent booking, navigate back to home
+        if (isUrgent) {
+            navigation.navigate('ClientHome');
+        }
+    };
+
+    const handleBack = () => {
+        navigation.goBack();
+    };
+
+    const handleNotification = () => {
+        // Navigate to notifications
+        navigation.navigate('Notifications');
+        console.log('Open notifications');
+    };
+
+    const handleProfile = () => {
+        navigation.navigate('ClientProfile');
     };
 
     const renderJobItem = ({ item, index }) => (
@@ -717,11 +639,15 @@ const PostJobScreen = () => {
         <View style={styles.container}>
             <DynamicHeader
                 type="back"
-                title="My Job Posts"
-                onBack={() => console.log('Navigate back')}
+                title={isUrgent ? "Urgent Booking" : "Post a Job"}
+                onBack={handleBack}
+                onBell={handleNotification}
+                onProfile={handleProfile}
+                showBell={true}
+                showProfile={true}
             />
 
-            <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+            <Animated.View style={[styles.content, { opacity: fadeAnim, paddingTop: getHeaderHeight() }]}>
                 {jobs.length === 0 ? (
                     <EmptyState onCreateJob={handleCreateJob} />
                 ) : (
@@ -743,6 +669,9 @@ const PostJobScreen = () => {
                 visible={showCreateModal}
                 onClose={() => setShowCreateModal(false)}
                 onSubmit={handleJobSubmit}
+                isUrgent={isUrgent}
+                interpreterId={interpreterId}
+                isInstantBook={isInstantBook}
             />
         </View>
     );
@@ -753,40 +682,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,
-    },
-
-    // Header Styles (consistent with Home Screen)
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: theme.spacing.md,
-        paddingTop: theme.spacing.xl,
-        paddingBottom: theme.spacing.md,
-        backgroundColor: theme.colors.surface,
-        borderBottomWidth: 1,
-        borderBottomColor: theme.colors.border,
-    },
-    headerTitle: {
-        ...theme.typography.h3,
-        color: theme.colors.primary,
-        fontWeight: '700',
-    },
-    headerTitleSecondary: {
-        ...theme.typography.h3,
-        color: theme.colors.text.primary,
-    },
-    headerActions: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    headerLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    headerButton: {
-        padding: theme.spacing.sm,
-        marginLeft: theme.spacing.sm,
     },
 
     // Content Styles

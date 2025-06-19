@@ -18,7 +18,7 @@ import { theme, getHeaderHeight } from '../Components/theme';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-const EarningsScreen = ({ navigation }) => {
+const EarningsScreen = ({ navigation, onBack }) => {
     const [selectedFilter, setSelectedFilter] = useState('all');
     const [selectedMonth, setSelectedMonth] = useState('current');
 
@@ -225,7 +225,11 @@ const EarningsScreen = ({ navigation }) => {
     const totals = getTotalEarnings();
 
     const handleBack = () => {
-        navigation.goBack();
+        if (onBack) {
+            onBack();
+        } else if (navigation) {
+            navigation.goBack();
+        }
     };
 
     const handleCashOut = () => {

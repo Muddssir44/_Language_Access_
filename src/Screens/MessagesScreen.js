@@ -196,7 +196,7 @@ const showToast = (message) => {
 };
 
 // Conversation List Item Component
-const ConversationItem = ({ conversation, onPress, index }) => {
+const ConversationItem = ({ conversation, onPress, index, userRole = 'client' }) => {
     const scaleAnim = useRef(new Animated.Value(0.95)).current;
     const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -231,6 +231,15 @@ const ConversationItem = ({ conversation, onPress, index }) => {
         }).start();
     };
 
+    const getDisplayName = () => {
+        return userRole === 'client' ? conversation.interpreterName : conversation.clientName;
+    };
+
+    const getAvatarText = () => {
+        const name = getDisplayName();
+        return name.charAt(0).toUpperCase();
+    };
+
     return (
         <Animated.View
             style={[
@@ -251,7 +260,7 @@ const ConversationItem = ({ conversation, onPress, index }) => {
                 <View style={styles.avatarContainer}>
                     <View style={[styles.avatar, { backgroundColor: conversation.avatarColor }]}>
                         <Text style={styles.avatarText}>
-                            {conversation.interpreterName.charAt(0).toUpperCase()}
+                            {getAvatarText()}
                         </Text>
                     </View>
                     {conversation.isOnline && <View style={styles.onlineIndicator} />}
@@ -260,7 +269,7 @@ const ConversationItem = ({ conversation, onPress, index }) => {
                 <View style={styles.conversationContent}>
                     <View style={styles.conversationHeader}>
                         <Text style={styles.interpreterName} numberOfLines={1}>
-                            {conversation.interpreterName}
+                            {getDisplayName()}
                         </Text>
                         <Text style={styles.timestamp}>{conversation.timestamp}</Text>
                     </View>
@@ -269,6 +278,12 @@ const ConversationItem = ({ conversation, onPress, index }) => {
                         <Text style={styles.languagePair}>{conversation.languagePair}</Text>
                         <Text style={styles.separator}>•</Text>
                         <Text style={styles.domain}>{conversation.domain}</Text>
+                        {userRole === 'interpreter' && conversation.rate && (
+                            <>
+                                <Text style={styles.separator}>•</Text>
+                                <Text style={styles.rate}>${conversation.rate}/hr</Text>
+                            </>
+                        )}
                     </View>
 
                     <View style={styles.lastMessageContainer}>
@@ -296,8 +311,9 @@ const ConversationItem = ({ conversation, onPress, index }) => {
 };
 
 // Message Bubble Component
-const MessageBubble = ({ message, onLongPress, isReplying }) => {
-    const isOwn = message.senderId === 'client';
+const MessageBubble = ({ message, onLongPress, isReplying, userRole = 'client' }) => {
+    const isOwn = (userRole === 'client' && message.senderId === 'client') ||
+        (userRole === 'interpreter' && message.senderId === 'interpreter');
     const scaleAnim = useRef(new Animated.Value(0.9)).current;
 
     useEffect(() => {
@@ -335,7 +351,8 @@ const MessageBubble = ({ message, onLongPress, isReplying }) => {
                         <View style={styles.replyLine} />
                         <View style={styles.replyContent}>
                             <Text style={styles.replyAuthor}>
-                                {message.replyTo.senderId === 'client' ? 'You' : 'Interpreter'}
+                                {message.replyTo.senderId === message.senderId ? 'You' :
+                                    (userRole === 'client' ? 'Interpreter' : 'Client')}
                             </Text>
                             <Text style={styles.replyText} numberOfLines={2}>
                                 {message.replyTo.text}
@@ -363,7 +380,7 @@ const MessageBubble = ({ message, onLongPress, isReplying }) => {
 };
 
 // Reply Preview Component
-const ReplyPreview = ({ replyingTo, onCancel }) => {
+const ReplyPreview = ({ replyingTo, onCancel, userRole = 'client' }) => {
     const slideAnim = useRef(new Animated.Value(-50)).current;
 
     useEffect(() => {
@@ -373,13 +390,21 @@ const ReplyPreview = ({ replyingTo, onCancel }) => {
         }).start();
     }, []);
 
+    const getSenderName = () => {
+        if (replyingTo.senderId === 'client') {
+            return userRole === 'client' ? 'yourself' : 'client';
+        } else {
+            return userRole === 'interpreter' ? 'yourself' : 'interpreter';
+        }
+    };
+
     return (
         <Animated.View style={[styles.replyPreview, { transform: [{ translateY: slideAnim }] }]}>
             <View style={styles.replyPreviewContent}>
                 <View style={styles.replyPreviewLine} />
                 <View style={styles.replyPreviewText}>
                     <Text style={styles.replyPreviewAuthor}>
-                        Replying to {replyingTo.senderId === 'client' ? 'yourself' : 'interpreter'}
+                        Replying to {getSenderName()}
                     </Text>
                     <Text style={styles.replyPreviewMessage} numberOfLines={1}>
                         {replyingTo.text}
@@ -394,44 +419,44 @@ const ReplyPreview = ({ replyingTo, onCancel }) => {
 };
 
 // Chat Screen Component
-const ChatScreen = ({ conversation, onBack }) => {
-    const [messages, setMessages] = useState([
-        {
-            id: '1',
-            text: 'Hello! I\'m interested in your legal interpretation services for tomorrow.',
-            senderId: 'client',
-            time: '10:30 AM',
-            timestamp: Date.now() - 3600000,
-        },
-        {
-            id: '2',
-            text: 'Hello! Thank you for reaching out. I\'d be happy to help with your legal interpretation needs. What specific type of legal proceeding will this be for?',
-            senderId: 'interpreter',
-            time: '10:32 AM',
-            timestamp: Date.now() - 3480000,
-        },
-        {
-            id: '3',
-            text: 'It\'s for a contract review meeting with our Spanish-speaking client. The meeting is expected to last about 2 hours.',
-            senderId: 'client',
-            time: '10:35 AM',
-            timestamp: Date.now() - 3300000,
-        },
-        {
-            id: '4',
-            text: 'Perfect! I have extensive experience in legal contract interpretation. My rate is $75/hour for legal interpretation services. What time works best for you tomorrow?',
-            senderId: 'interpreter',
-            time: '10:37 AM',
-            timestamp: Date.now() - 3180000,
-        },
-    ]);
-
+const ChatScreen = ({ conversation, onBack, userRole = 'client', userId }) => {
+    const [messages, setMessages] = useState([]);
     const [inputText, setInputText] = useState('');
     const [replyingTo, setReplyingTo] = useState(null);
     const scrollViewRef = useRef(null);
     const inputRef = useRef(null);
     const [searching, setSearching] = useState(false);
     const [searchValue, setSearchValue] = useState('');
+    const [loading, setLoading] = useState(true);
+
+    // Load messages for the conversation
+    useEffect(() => {
+        const loadMessages = async () => {
+            try {
+                const endpoint = `/api/${userRole}/messages/${conversation.id}`;
+                const response = await fetch(endpoint, {
+                    headers: {
+                        'Authorization': `Bearer ${getUserToken()}`,
+                    }
+                });
+
+                if (response.ok) {
+                    const messagesData = await response.json();
+                    setMessages(messagesData);
+                } else {
+                    console.error('Failed to load messages');
+                }
+            } catch (error) {
+                console.error('Messages load error:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (conversation.id) {
+            loadMessages();
+        }
+    }, [conversation.id, userRole]);
 
     const scrollToBottom = () => {
         setTimeout(() => {
@@ -443,7 +468,7 @@ const ChatScreen = ({ conversation, onBack }) => {
         scrollToBottom();
     }, [messages]);
 
-    const handleSendMessage = () => {
+    const handleSendMessage = async () => {
         if (!inputText.trim()) return;
 
         // Validate message content
@@ -467,19 +492,56 @@ const ChatScreen = ({ conversation, onBack }) => {
             return;
         }
 
-        const newMessage = {
-            id: Date.now().toString(),
+        const tempMessage = {
+            id: `temp-${Date.now()}`,
             text: inputText,
-            senderId: 'client',
+            senderId: userRole === 'client' ? 'client' : 'interpreter',
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             timestamp: Date.now(),
             replyTo: replyingTo,
+            status: 'sending'
         };
 
-        setMessages([...messages, newMessage]);
+        // Optimistically add message to UI
+        setMessages([...messages, tempMessage]);
         setInputText('');
         setReplyingTo(null);
         scrollToBottom();
+
+        try {
+            // Send message to backend
+            const response = await fetch('/api/messages', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getUserToken()}`,
+                },
+                body: JSON.stringify({
+                    conversationId: conversation.id,
+                    senderId: userId,
+                    senderRole: userRole,
+                    text: inputText,
+                    replyTo: replyingTo
+                })
+            });
+
+            if (response.ok) {
+                const savedMessage = await response.json();
+                // Replace temp message with saved message
+                setMessages(msgs => msgs.map(msg =>
+                    msg.id === tempMessage.id ? savedMessage : msg
+                ));
+            } else {
+                // Remove temp message on error
+                setMessages(msgs => msgs.filter(msg => msg.id !== tempMessage.id));
+                Alert.alert('Error', 'Failed to send message. Please try again.');
+            }
+        } catch (error) {
+            console.error('Send message error:', error);
+            // Remove temp message on error
+            setMessages(msgs => msgs.filter(msg => msg.id !== tempMessage.id));
+            Alert.alert('Error', 'Network error. Please check your connection.');
+        }
     };
 
     const handleMessageLongPress = (message) => {
@@ -510,11 +572,15 @@ const ChatScreen = ({ conversation, onBack }) => {
         ? messages.filter(m => m.text.toLowerCase().includes(searchValue.trim().toLowerCase()))
         : messages;
 
+    const getOtherUserRole = () => {
+        return userRole === 'client' ? 'Interpreter' : 'Client';
+    };
+
     return (
         <View style={styles.chatContainer}>
             <DynamicHeader
                 type="back"
-                title={conversation.interpreterName}
+                title={userRole === 'client' ? conversation.interpreterName : conversation.clientName}
                 onBack={onBack}
                 showActions={true}
                 onSearchPress={() => setSearching(true)}
@@ -545,6 +611,7 @@ const ChatScreen = ({ conversation, onBack }) => {
                         message={message}
                         onLongPress={handleMessageLongPress}
                         isReplying={!!replyingTo}
+                        userRole={userRole}
                     />
                 ))}
             </ScrollView>
@@ -554,6 +621,7 @@ const ChatScreen = ({ conversation, onBack }) => {
                 <ReplyPreview
                     replyingTo={replyingTo}
                     onCancel={() => setReplyingTo(null)}
+                    userRole={userRole}
                 />
             )}
 
@@ -596,8 +664,152 @@ const ChatScreen = ({ conversation, onBack }) => {
     );
 };
 
+// Helper function to get user token (to be implemented with actual auth)
+const getUserToken = () => {
+    // This should return the actual JWT token from your auth system
+    // For now, returning a placeholder
+    return 'your-jwt-token-here';
+};
+
+// Main Messages Screen Component
+const MessagesScreen = ({ userRole = 'client', userId }) => {
+    const [conversations, setConversations] = useState([]);
+    const [selectedConversation, setSelectedConversation] = useState(null);
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const [searching, setSearching] = useState(false);
+    const [searchValue, setSearchValue] = useState('');
+    const [loading, setLoading] = useState(true);
+
+    // Load conversations based on user role
+    useEffect(() => {
+        const loadConversations = async () => {
+            try {
+                const endpoint = `/api/${userRole}/conversations/${userId}`;
+                const response = await fetch(endpoint, {
+                    headers: {
+                        'Authorization': `Bearer ${getUserToken()}`,
+                    }
+                });
+
+                if (response.ok) {
+                    const conversationsData = await response.json();
+                    setConversations(conversationsData);
+                } else {
+                    console.error('Failed to load conversations');
+                }
+            } catch (error) {
+                console.error('Conversations load error:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (userId) {
+            loadConversations();
+        }
+    }, [userId, userRole]);
+
+    useEffect(() => {
+        Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 600,
+            useNativeDriver: false,
+        }).start();
+    }, []);
+
+    const handleConversationPress = async (conversation) => {
+        // Mark as read
+        try {
+            await fetch(`/api/${userRole}/conversations/${conversation.id}/mark-read`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${getUserToken()}`,
+                }
+            });
+
+            setConversations(conversations.map(conv =>
+                conv.id === conversation.id
+                    ? { ...conv, unreadCount: 0 }
+                    : conv
+            ));
+        } catch (error) {
+            console.error('Mark read error:', error);
+        }
+
+        setSelectedConversation(conversation);
+    };
+
+    const handleBackFromChat = () => {
+        setSelectedConversation(null);
+    };
+
+    const filteredConversations = searching && searchValue.trim()
+        ? conversations.filter(conv => {
+            const otherUserName = userRole === 'client' ? conv.interpreterName : conv.clientName;
+            return otherUserName.toLowerCase().includes(searchValue.trim().toLowerCase()) ||
+                conv.languagePair.toLowerCase().includes(searchValue.trim().toLowerCase()) ||
+                conv.domain.toLowerCase().includes(searchValue.trim().toLowerCase()) ||
+                conv.lastMessage.toLowerCase().includes(searchValue.trim().toLowerCase());
+        })
+        : conversations;
+
+    const renderConversationItem = ({ item, index }) => (
+        <ConversationItem
+            conversation={item}
+            onPress={handleConversationPress}
+            index={index}
+            userRole={userRole}
+        />
+    );
+
+    if (selectedConversation) {
+        return (
+            <ChatScreen
+                conversation={selectedConversation}
+                onBack={handleBackFromChat}
+                userRole={userRole}
+                userId={userId}
+            />
+        );
+    }
+
+    return (
+        <View style={styles.container}>
+            <DynamicHeader
+                type="back"
+                title="Messages"
+                onBack={() => console.log('Navigate back')}
+                showActions={true}
+                onSearchPress={() => setSearching(true)}
+                isSearching={searching}
+                searchValue={searchValue}
+                onSearchChange={setSearchValue}
+                onSearchCancel={() => { setSearching(false); setSearchValue(''); }}
+            />
+
+            <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+                {loading ? (
+                    <View style={styles.loadingContainer}>
+                        <Text style={styles.loadingText}>Loading conversations...</Text>
+                    </View>
+                ) : filteredConversations.length === 0 ? (
+                    <EmptyState userRole={userRole} />
+                ) : (
+                    <FlatList
+                        data={filteredConversations}
+                        renderItem={renderConversationItem}
+                        keyExtractor={(item) => item.id}
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={styles.conversationsList}
+                    />
+                )}
+            </Animated.View>
+        </View>
+    );
+};
+
 // Empty State Component
-const EmptyState = () => {
+const EmptyState = ({ userRole = 'client' }) => {
     const bounceAnim = useRef(new Animated.Value(0.9)).current;
 
     useEffect(() => {
@@ -629,130 +841,11 @@ const EmptyState = () => {
             </Animated.View>
             <Text style={styles.emptyStateTitle}>No conversations yet</Text>
             <Text style={styles.emptyStateSubtitle}>
-                Start connecting with interpreters to begin messaging
+                {userRole === 'client'
+                    ? 'Start connecting with interpreters to begin messaging'
+                    : 'Start accepting client requests to begin messaging'
+                }
             </Text>
-        </View>
-    );
-};
-
-// Main Messages Screen Component
-const MessagesScreen = () => {
-    const [conversations, setConversations] = useState([
-        {
-            id: '1',
-            interpreterName: 'Maria Rodriguez',
-            languagePair: 'English ↔ Spanish',
-            domain: 'Legal',
-            lastMessage: 'Perfect! My rate is $75/hour for legal interpretation services. What time works best?',
-            timestamp: '10:37 AM',
-            unreadCount: 2,
-            isOnline: true,
-            avatarColor: theme.colors.primary,
-        },
-        {
-            id: '2',
-            interpreterName: 'Jean-Pierre Dubois',
-            languagePair: 'English ↔ French',
-            domain: 'Medical',
-            lastMessage: 'I\'m available for the medical consultation tomorrow at 2 PM.',
-            timestamp: 'Yesterday',
-            unreadCount: 0,
-            isOnline: false,
-            avatarColor: theme.colors.secondary,
-        },
-        {
-            id: '3',
-            interpreterName: 'Ahmad Hassan',
-            languagePair: 'English ↔ Arabic',
-            domain: 'Business',
-            lastMessage: 'Thank you for considering my services. I have 5+ years of experience in business interpretation.',
-            timestamp: '2 days ago',
-            unreadCount: 1,
-            isOnline: true,
-            avatarColor: theme.colors.accent,
-        },
-    ]);
-
-    const [selectedConversation, setSelectedConversation] = useState(null);
-    const fadeAnim = useRef(new Animated.Value(0)).current;
-    const [searching, setSearching] = useState(false);
-    const [searchValue, setSearchValue] = useState('');
-
-    useEffect(() => {
-        Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 600,
-            useNativeDriver: false,
-        }).start();
-    }, []);
-
-    const handleConversationPress = (conversation) => {
-        // Mark as read
-        setConversations(conversations.map(conv =>
-            conv.id === conversation.id
-                ? { ...conv, unreadCount: 0 }
-                : conv
-        ));
-        setSelectedConversation(conversation);
-    };
-
-    const handleBackFromChat = () => {
-        setSelectedConversation(null);
-    };
-
-    const filteredConversations = searching && searchValue.trim()
-        ? conversations.filter(conv =>
-            conv.interpreterName.toLowerCase().includes(searchValue.trim().toLowerCase()) ||
-            conv.languagePair.toLowerCase().includes(searchValue.trim().toLowerCase()) ||
-            conv.domain.toLowerCase().includes(searchValue.trim().toLowerCase()) ||
-            conv.lastMessage.toLowerCase().includes(searchValue.trim().toLowerCase())
-        )
-        : conversations;
-
-    const renderConversationItem = ({ item, index }) => (
-        <ConversationItem
-            conversation={item}
-            onPress={handleConversationPress}
-            index={index}
-        />
-    );
-
-    if (selectedConversation) {
-        return (
-            <ChatScreen
-                conversation={selectedConversation}
-                onBack={handleBackFromChat}
-            />
-        );
-    }
-
-    return (
-        <View style={styles.container}>
-            <DynamicHeader
-                type="back"
-                title="Messages"
-                onBack={() => console.log('Navigate back')}
-                showActions={true}
-                onSearchPress={() => setSearching(true)}
-                isSearching={searching}
-                searchValue={searchValue}
-                onSearchChange={setSearchValue}
-                onSearchCancel={() => { setSearching(false); setSearchValue(''); }}
-            />
-
-            <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-                {filteredConversations.length === 0 ? (
-                    <EmptyState />
-                ) : (
-                    <FlatList
-                        data={filteredConversations}
-                        renderItem={renderConversationItem}
-                        keyExtractor={(item) => item.id}
-                        showsVerticalScrollIndicator={false}
-                        contentContainerStyle={styles.conversationsList}
-                    />
-                )}
-            </Animated.View>
         </View>
     );
 };
@@ -1129,6 +1222,17 @@ const styles = StyleSheet.create({
     },
     sendButtonInactive: {
         backgroundColor: theme.colors.border,
+    },
+
+    // Loading Styles
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        ...theme.typography.body,
+        color: theme.colors.text.primary,
     },
 });
 

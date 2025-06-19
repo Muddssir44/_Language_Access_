@@ -23,6 +23,13 @@ import { theme, getHeaderHeight } from '../Components/theme';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
+// Helper function to get user token (to be implemented with actual auth)
+const getUserToken = () => {
+    // This should return the actual JWT token from your auth system
+    // For now, returning a placeholder
+    return 'your-jwt-token-here';
+};
+
 // Profile List Item Component
 const ProfileListItem = ({ icon, title, subtitle, onPress, showChevron = true, rightComponent, iconColor }) => {
     const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -78,7 +85,7 @@ const SectionHeader = ({ title }) => (
 );
 
 // Main Profile Screen
-const ClientProfileScreen = ({ navigation, route }) => {
+const ClientProfileScreen = ({ navigation, route, userRole = 'client', userId = 'default-client-id' }) => {
     const [currentScreen, setCurrentScreen] = useState('main');
     const [fadeAnim] = useState(new Animated.Value(1));
 
@@ -134,33 +141,33 @@ const ClientProfileScreen = ({ navigation, route }) => {
     const renderScreen = () => {
         switch (currentScreen) {
             case 'myProfile':
-                return <MyProfileScreen onBack={handleBack} />;
+                return <MyProfileScreen onBack={handleBack} userRole={userRole} userId={userId} />;
             case 'changePassword':
-                return <ChangePasswordScreen onBack={handleBack} />;
+                return <ChangePasswordScreen onBack={handleBack} userRole={userRole} userId={userId} />;
             case 'cardRegistration':
-                return <CardRegistrationScreen onBack={handleBack} />;
+                return <CardRegistrationScreen onBack={handleBack} userRole={userRole} userId={userId} />;
             case 'callHistory':
-                return <CallHistoryScreen onBack={handleBack} />;
+                return <CallHistoryScreen onBack={handleBack} userRole={userRole} userId={userId} />;
             case 'paymentHistory':
-                return <PaymentHistoryScreen onBack={handleBack} />;
+                return <PaymentHistoryScreen onBack={handleBack} userRole={userRole} userId={userId} />;
             case 'languageCoverage':
-                return <LanguageCoverageScreen onBack={handleBack} />;
+                return <LanguageCoverageScreen onBack={handleBack} userRole={userRole} userId={userId} />;
             case 'about':
-                return <AboutScreen onBack={handleBack} />;
+                return <AboutScreen onBack={handleBack} userRole={userRole} userId={userId} />;
             case 'terms':
-                return <TermsScreen onBack={handleBack} />;
+                return <TermsScreen onBack={handleBack} userRole={userRole} userId={userId} />;
             case 'privacy':
-                return <PrivacyPolicyScreen onBack={handleBack} />;
+                return <PrivacyPolicyScreen onBack={handleBack} userRole={userRole} userId={userId} />;
             case 'contact':
-                return <ContactUsScreen onBack={handleBack} />;
+                return <ContactUsScreen onBack={handleBack} userRole={userRole} userId={userId} />;
             case 'version':
-                return <VersionScreen onBack={handleBack} />;
+                return <VersionScreen onBack={handleBack} userRole={userRole} userId={userId} />;
             case 'signOut':
-                return <SignOutConfirmationScreen onBack={handleBack} onSignOut={handleSignOut} />;
+                return <SignOutConfirmationScreen onBack={handleBack} onSignOut={handleSignOut} userRole={userRole} userId={userId} />;
             case 'deleteAccount':
-                return <DeleteAccountScreen onBack={handleBack} onDeleteAccount={handleDeleteAccount} />;
+                return <DeleteAccountScreen onBack={handleBack} onDeleteAccount={handleDeleteAccount} userRole={userRole} userId={userId} />;
             default:
-                return <MainProfileScreen onNavigate={navigateToScreen} onBack={handleBack} />;
+                return <MainProfileScreen onNavigate={navigateToScreen} onBack={handleBack} userRole={userRole} userId={userId} />;
         }
     };
 
@@ -172,14 +179,21 @@ const ClientProfileScreen = ({ navigation, route }) => {
 };
 
 // My Profile Screen
-const MyProfileScreen = ({ onBack }) => {
+const MyProfileScreen = ({ onBack, userRole = 'client', userId }) => {
     const [formData, setFormData] = useState({
-        firstName: 'John',
-        lastName: 'Anderson',
-        email: 'john.anderson@company.com',
+        firstName: userRole === 'client' ? 'John' : 'Maria',
+        lastName: userRole === 'client' ? 'Anderson' : 'Rodriguez',
+        email: userRole === 'client' ? 'john.anderson@company.com' : 'maria.rodriguez@languageaccess.com',
         phone: '+1 (555) 123-4567',
-        company: 'Tech Solutions Inc.',
-        jobTitle: 'Operations Manager',
+        company: userRole === 'client' ? 'Tech Solutions Inc.' : '',
+        jobTitle: userRole === 'client' ? 'Operations Manager' : 'Certified Spanish Interpreter',
+        // Interpreter-specific fields
+        specialty: userRole === 'interpreter' ? 'Legal & Medical Interpretation' : '',
+        languages: userRole === 'interpreter' ? ['Spanish', 'English'] : [],
+        certifications: userRole === 'interpreter' ? ['State Certified', 'Medical Certified'] : [],
+        experience: userRole === 'interpreter' ? '8 years' : '',
+        hourlyRate: userRole === 'interpreter' ? 75 : 0,
+        availability: userRole === 'interpreter' ? '24/7' : '',
         notifications: true,
         emailUpdates: false,
     });
@@ -195,16 +209,71 @@ const MyProfileScreen = ({ onBack }) => {
         if (!formData.email.trim()) newErrors.email = 'Email is required';
         if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Invalid email format';
 
+        // Role-specific validations
+        if (userRole === 'interpreter') {
+            if (!formData.specialty.trim()) newErrors.specialty = 'Specialty is required';
+            if (formData.languages.length === 0) newErrors.languages = 'At least one language is required';
+            if (!formData.hourlyRate || formData.hourlyRate <= 0) newErrors.hourlyRate = 'Valid hourly rate is required';
+        }
+
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSave = () => {
+    const handleSave = async () => {
         if (validateForm()) {
-            setIsEditing(false);
-            Alert.alert('Success', 'Profile updated successfully!');
+            try {
+                // Backend API call based on user role
+                const endpoint = userRole === 'client' ? '/api/client/profile' : '/api/interpreter/profile';
+                const response = await fetch(endpoint, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getUserToken()}`,
+                    },
+                    body: JSON.stringify({
+                        userId: userId,
+                        ...formData
+                    })
+                });
+
+                if (response.ok) {
+                    setIsEditing(false);
+                    Alert.alert('Success', 'Profile updated successfully!');
+                } else {
+                    Alert.alert('Error', 'Failed to update profile. Please try again.');
+                }
+            } catch (error) {
+                console.error('Profile update error:', error);
+                Alert.alert('Error', 'Network error. Please check your connection.');
+            }
         }
     };
+
+    // Load user profile data on component mount
+    useEffect(() => {
+        const loadProfile = async () => {
+            try {
+                const endpoint = userRole === 'client' ? '/api/client/profile' : '/api/interpreter/profile';
+                const response = await fetch(`${endpoint}/${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${getUserToken()}`,
+                    }
+                });
+
+                if (response.ok) {
+                    const profileData = await response.json();
+                    setFormData(profileData);
+                }
+            } catch (error) {
+                console.error('Profile load error:', error);
+            }
+        };
+
+        if (userId) {
+            loadProfile();
+        }
+    }, [userId, userRole]);
 
     return (
         <View style={styles.container}>
@@ -228,7 +297,11 @@ const MyProfileScreen = ({ onBack }) => {
                 <View style={styles.profileEditHeader}>
                     <View style={styles.avatarContainer}>
                         <View style={styles.avatar}>
-                            <Feather name="user" size={40} color={theme.colors.text.white} />
+                            <Feather
+                                name={userRole === 'interpreter' ? "mic" : "user"}
+                                size={40}
+                                color={theme.colors.text.white}
+                            />
                         </View>
                         <TouchableOpacity style={styles.editAvatarButton}>
                             <Feather name="camera" size={16} color={theme.colors.text.white} />
@@ -294,27 +367,84 @@ const MyProfileScreen = ({ onBack }) => {
                         />
                     </View>
 
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Company</Text>
-                        <TextInput
-                            style={[styles.textInput, !isEditing && styles.textInputDisabled]}
-                            value={formData.company}
-                            onChangeText={(text) => setFormData({ ...formData, company: text })}
-                            editable={isEditing}
-                            placeholderTextColor={theme.colors.text.light}
-                        />
-                    </View>
+                    {/* Role-specific fields */}
+                    {userRole === 'client' && (
+                        <>
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabel}>Company</Text>
+                                <TextInput
+                                    style={[styles.textInput, !isEditing && styles.textInputDisabled]}
+                                    value={formData.company}
+                                    onChangeText={(text) => setFormData({ ...formData, company: text })}
+                                    editable={isEditing}
+                                    placeholderTextColor={theme.colors.text.light}
+                                />
+                            </View>
 
-                    <View style={styles.inputGroup}>
-                        <Text style={styles.inputLabel}>Job Title</Text>
-                        <TextInput
-                            style={[styles.textInput, !isEditing && styles.textInputDisabled]}
-                            value={formData.jobTitle}
-                            onChangeText={(text) => setFormData({ ...formData, jobTitle: text })}
-                            editable={isEditing}
-                            placeholderTextColor={theme.colors.text.light}
-                        />
-                    </View>
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabel}>Job Title</Text>
+                                <TextInput
+                                    style={[styles.textInput, !isEditing && styles.textInputDisabled]}
+                                    value={formData.jobTitle}
+                                    onChangeText={(text) => setFormData({ ...formData, jobTitle: text })}
+                                    editable={isEditing}
+                                    placeholderTextColor={theme.colors.text.light}
+                                />
+                            </View>
+                        </>
+                    )}
+
+                    {userRole === 'interpreter' && (
+                        <>
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabel}>Specialty</Text>
+                                <TextInput
+                                    style={[styles.textInput, !isEditing && styles.textInputDisabled, errors.specialty && styles.textInputError]}
+                                    value={formData.specialty}
+                                    onChangeText={(text) => setFormData({ ...formData, specialty: text })}
+                                    editable={isEditing}
+                                    placeholderTextColor={theme.colors.text.light}
+                                />
+                                {errors.specialty && <Text style={styles.errorText}>{errors.specialty}</Text>}
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabel}>Languages (comma separated)</Text>
+                                <TextInput
+                                    style={[styles.textInput, !isEditing && styles.textInputDisabled, errors.languages && styles.textInputError]}
+                                    value={formData.languages.join(', ')}
+                                    onChangeText={(text) => setFormData({ ...formData, languages: text.split(',').map(lang => lang.trim()) })}
+                                    editable={isEditing}
+                                    placeholderTextColor={theme.colors.text.light}
+                                />
+                                {errors.languages && <Text style={styles.errorText}>{errors.languages}</Text>}
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabel}>Experience</Text>
+                                <TextInput
+                                    style={[styles.textInput, !isEditing && styles.textInputDisabled]}
+                                    value={formData.experience}
+                                    onChangeText={(text) => setFormData({ ...formData, experience: text })}
+                                    editable={isEditing}
+                                    placeholderTextColor={theme.colors.text.light}
+                                />
+                            </View>
+
+                            <View style={styles.inputGroup}>
+                                <Text style={styles.inputLabel}>Hourly Rate ($)</Text>
+                                <TextInput
+                                    style={[styles.textInput, !isEditing && styles.textInputDisabled, errors.hourlyRate && styles.textInputError]}
+                                    value={formData.hourlyRate.toString()}
+                                    onChangeText={(text) => setFormData({ ...formData, hourlyRate: parseFloat(text) || 0 })}
+                                    editable={isEditing}
+                                    keyboardType="numeric"
+                                    placeholderTextColor={theme.colors.text.light}
+                                />
+                                {errors.hourlyRate && <Text style={styles.errorText}>{errors.hourlyRate}</Text>}
+                            </View>
+                        </>
+                    )}
                 </View>
 
                 <SectionHeader title="Notification Preferences" />
@@ -322,7 +452,9 @@ const MyProfileScreen = ({ onBack }) => {
                     <View style={styles.switchItem}>
                         <View style={styles.switchItemContent}>
                             <Text style={styles.switchItemTitle}>Push Notifications</Text>
-                            <Text style={styles.switchItemSubtitle}>Receive notifications about your calls</Text>
+                            <Text style={styles.switchItemSubtitle}>
+                                {userRole === 'client' ? 'Receive notifications about your calls' : 'Receive notifications about interpretation requests'}
+                            </Text>
                         </View>
                         <Switch
                             value={formData.notifications}
@@ -335,7 +467,9 @@ const MyProfileScreen = ({ onBack }) => {
                     <View style={styles.switchItem}>
                         <View style={styles.switchItemContent}>
                             <Text style={styles.switchItemTitle}>Email Updates</Text>
-                            <Text style={styles.switchItemSubtitle}>Receive updates via email</Text>
+                            <Text style={styles.switchItemSubtitle}>
+                                {userRole === 'client' ? 'Receive updates via email' : 'Receive earnings and performance updates via email'}
+                            </Text>
                         </View>
                         <Switch
                             value={formData.emailUpdates}
@@ -362,7 +496,7 @@ const MyProfileScreen = ({ onBack }) => {
 };
 
 // Change Password Screen
-const ChangePasswordScreen = ({ onBack }) => {
+const ChangePasswordScreen = ({ onBack, userRole = 'client', userId }) => {
     const [formData, setFormData] = useState({
         currentPassword: '',
         newPassword: '',
@@ -387,10 +521,36 @@ const ChangePasswordScreen = ({ onBack }) => {
         return Object.keys(newErrors).length === 0;
     };
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (validateForm()) {
-            Alert.alert('Success', 'Password changed successfully!');
-            setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+            try {
+                // Backend API call for password change
+                const endpoint = `/api/auth/change-password`;
+                const response = await fetch(endpoint, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getUserToken()}`,
+                    },
+                    body: JSON.stringify({
+                        userId: userId,
+                        userRole: userRole,
+                        currentPassword: formData.currentPassword,
+                        newPassword: formData.newPassword
+                    })
+                });
+
+                if (response.ok) {
+                    Alert.alert('Success', 'Password changed successfully!');
+                    setFormData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+                } else {
+                    const errorData = await response.json();
+                    Alert.alert('Error', errorData.message || 'Failed to change password.');
+                }
+            } catch (error) {
+                console.error('Password change error:', error);
+                Alert.alert('Error', 'Network error. Please check your connection.');
+            }
         }
     };
 
@@ -500,25 +660,33 @@ const ChangePasswordScreen = ({ onBack }) => {
 };
 
 // Card Registration Screen
-const CardRegistrationScreen = ({ onBack }) => {
-    const [cards, setCards] = useState([
-        {
-            id: '1',
-            type: 'visa',
-            last4: '4242',
-            expiryMonth: '12',
-            expiryYear: '2025',
-            isDefault: true,
-        },
-        {
-            id: '2',
-            type: 'mastercard',
-            last4: '5555',
-            expiryMonth: '08',
-            expiryYear: '2026',
-            isDefault: false,
+const CardRegistrationScreen = ({ onBack, userRole = 'client', userId }) => {
+    const [cards, setCards] = useState([]);
+
+    // Load user's cards on component mount
+    useEffect(() => {
+        const loadCards = async () => {
+            try {
+                const endpoint = `/api/${userRole}/payment-methods/${userId}`;
+                const response = await fetch(endpoint, {
+                    headers: {
+                        'Authorization': `Bearer ${getUserToken()}`,
+                    }
+                });
+
+                if (response.ok) {
+                    const cardsData = await response.json();
+                    setCards(cardsData);
+                }
+            } catch (error) {
+                console.error('Cards load error:', error);
+            }
+        };
+
+        if (userId) {
+            loadCards();
         }
-    ]);
+    }, [userId, userRole]);
 
     const [showAddModal, setShowAddModal] = useState(false);
     const [newCard, setNewCard] = useState({
@@ -545,20 +713,34 @@ const CardRegistrationScreen = ({ onBack }) => {
         }
     };
 
-    const handleAddCard = () => {
-        // Simulate adding card
-        const card = {
-            id: Date.now().toString(),
-            type: 'visa',
-            last4: newCard.number.slice(-4),
-            expiryMonth: newCard.expiry.split('/')[0],
-            expiryYear: `20${newCard.expiry.split('/')[1]}`,
-            isDefault: cards.length === 0,
-        };
-        setCards([...cards, card]);
-        setNewCard({ number: '', expiry: '', cvv: '', name: '' });
-        setShowAddModal(false);
-        Alert.alert('Success', 'Card added successfully!');
+    const handleAddCard = async () => {
+        try {
+            const endpoint = `/api/${userRole}/payment-methods`;
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getUserToken()}`,
+                },
+                body: JSON.stringify({
+                    userId: userId,
+                    ...newCard
+                })
+            });
+
+            if (response.ok) {
+                const savedCard = await response.json();
+                setCards([...cards, savedCard]);
+                setNewCard({ number: '', expiry: '', cvv: '', name: '' });
+                setShowAddModal(false);
+                Alert.alert('Success', 'Card added successfully!');
+            } else {
+                Alert.alert('Error', 'Failed to add card. Please try again.');
+            }
+        } catch (error) {
+            console.error('Add card error:', error);
+            Alert.alert('Error', 'Network error. Please check your connection.');
+        }
     };
 
     const handleDeleteCard = (cardId) => {
@@ -568,8 +750,28 @@ const CardRegistrationScreen = ({ onBack }) => {
             [
                 { text: 'Cancel', style: 'cancel' },
                 {
-                    text: 'Delete', style: 'destructive', onPress: () => {
-                        setCards(cards.filter(card => card.id !== cardId));
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            const endpoint = `/api/${userRole}/payment-methods/${cardId}`;
+                            const response = await fetch(endpoint, {
+                                method: 'DELETE',
+                                headers: {
+                                    'Authorization': `Bearer ${getUserToken()}`,
+                                }
+                            });
+
+                            if (response.ok) {
+                                setCards(cards.filter(card => card.id !== cardId));
+                                Alert.alert('Success', 'Card removed successfully.');
+                            } else {
+                                Alert.alert('Error', 'Failed to remove card.');
+                            }
+                        } catch (error) {
+                            console.error('Delete card error:', error);
+                            Alert.alert('Error', 'Network error. Please check your connection.');
+                        }
                     }
                 }
             ]
@@ -720,53 +922,39 @@ const CardRegistrationScreen = ({ onBack }) => {
 };
 
 // Call History Screen
-const CallHistoryScreen = ({ onBack }) => {
-    const [callHistory] = useState([
-        {
-            id: '1',
-            date: '2024-06-15',
-            time: '14:30',
-            interpreter: 'Maria Rodriguez',
-            language: 'Spanish',
-            duration: '25 min',
-            pricePerMinute: 2.50,
-            totalCost: 62.50,
-            status: 'Completed'
-        },
-        {
-            id: '2',
-            date: '2024-06-14',
-            time: '09:15',
-            interpreter: 'Li Wei',
-            language: 'Mandarin',
-            duration: '18 min',
-            pricePerMinute: 3.00,
-            totalCost: 54.00,
-            status: 'Completed'
-        },
-        {
-            id: '3',
-            date: '2024-06-12',
-            time: '16:45',
-            interpreter: 'Ahmed Hassan',
-            language: 'Arabic',
-            duration: '0 min',
-            pricePerMinute: 2.75,
-            totalCost: 0.00,
-            status: 'Missed'
-        },
-        {
-            id: '4',
-            date: '2024-06-10',
-            time: '11:20',
-            interpreter: 'Sophie Dubois',
-            language: 'French',
-            duration: '32 min',
-            pricePerMinute: 2.25,
-            totalCost: 72.00,
-            status: 'Refunded'
+const CallHistoryScreen = ({ onBack, userRole = 'client', userId }) => {
+    const [callHistory, setCallHistory] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    // Load call history based on user role
+    useEffect(() => {
+        const loadCallHistory = async () => {
+            try {
+                const endpoint = `/api/${userRole}/call-history/${userId}`;
+                const response = await fetch(endpoint, {
+                    headers: {
+                        'Authorization': `Bearer ${getUserToken()}`,
+                    }
+                });
+
+                if (response.ok) {
+                    const historyData = await response.json();
+                    setCallHistory(historyData);
+                } else {
+                    console.error('Failed to load call history');
+                }
+            } catch (error) {
+                console.error('Call history load error:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (userId) {
+            loadCallHistory();
         }
-    ]);
+    }, [userId, userRole]);
+
     const scrollY = useRef(new Animated.Value(0)).current;
 
     const getStatusColor = (status) => {
@@ -793,8 +981,12 @@ const CallHistoryScreen = ({ onBack }) => {
             <View style={styles.callHistoryDetails}>
                 <View style={styles.callHistoryRow}>
                     <Feather name="user" size={16} color={theme.colors.text.secondary} />
-                    <Text style={styles.callHistoryLabel}>Interpreter:</Text>
-                    <Text style={styles.callHistoryValue}>{item.interpreter}</Text>
+                    <Text style={styles.callHistoryLabel}>
+                        {userRole === 'client' ? 'Interpreter:' : 'Client:'}
+                    </Text>
+                    <Text style={styles.callHistoryValue}>
+                        {userRole === 'client' ? item.interpreterName : item.clientName}
+                    </Text>
                 </View>
                 <View style={styles.callHistoryRow}>
                     <Feather name="globe" size={16} color={theme.colors.text.secondary} />
@@ -808,8 +1000,12 @@ const CallHistoryScreen = ({ onBack }) => {
                 </View>
                 <View style={styles.callHistoryRow}>
                     <Feather name="dollar-sign" size={16} color={theme.colors.text.secondary} />
-                    <Text style={styles.callHistoryLabel}>Total Cost:</Text>
-                    <Text style={styles.callHistoryPrice}>${item.totalCost.toFixed(2)}</Text>
+                    <Text style={styles.callHistoryLabel}>
+                        {userRole === 'client' ? 'Cost:' : 'Earnings:'}
+                    </Text>
+                    <Text style={styles.callHistoryPrice}>
+                        ${userRole === 'client' ? item.totalCost?.toFixed(2) : item.earnings?.toFixed(2)}
+                    </Text>
                 </View>
             </View>
         </View>
@@ -837,8 +1033,12 @@ const CallHistoryScreen = ({ onBack }) => {
                 )}
                 ListHeaderComponent={() => (
                     <View style={styles.historyHeader}>
-                        <Text style={styles.historyHeaderTitle}>Your Interpretation Calls</Text>
-                        <Text style={styles.historyHeaderSubtitle}>View all your past calls and their details</Text>
+                        <Text style={styles.historyHeaderTitle}>
+                            {userRole === 'client' ? 'Your Interpretation Calls' : 'Your Completed Sessions'}
+                        </Text>
+                        <Text style={styles.historyHeaderSubtitle}>
+                            {userRole === 'client' ? 'View all your past calls and their details' : 'View all your completed interpretation sessions'}
+                        </Text>
                     </View>
                 )}
                 showsVerticalScrollIndicator={false}
@@ -848,45 +1048,39 @@ const CallHistoryScreen = ({ onBack }) => {
 };
 
 // Payment History Screen
-const PaymentHistoryScreen = ({ onBack }) => {
-    const [paymentHistory] = useState([
-        {
-            id: '1',
-            date: '2024-06-15',
-            description: 'Spanish Interpretation - Maria Rodriguez',
-            amount: 62.50,
-            status: 'Paid',
-            method: 'Visa •••• 4242',
-            transactionId: 'TXN-2024-001'
-        },
-        {
-            id: '2',
-            date: '2024-06-14',
-            description: 'Mandarin Interpretation - Li Wei',
-            amount: 54.00,
-            status: 'Paid',
-            method: 'Mastercard •••• 5555',
-            transactionId: 'TXN-2024-002'
-        },
-        {
-            id: '3',
-            date: '2024-06-12',
-            description: 'Arabic Interpretation - Missed Call Refund',
-            amount: -15.00,
-            status: 'Refunded',
-            method: 'Visa •••• 4242',
-            transactionId: 'TXN-2024-003'
-        },
-        {
-            id: '4',
-            date: '2024-06-10',
-            description: 'French Interpretation - Sophie Dubois',
-            amount: 72.00,
-            status: 'Paid',
-            method: 'Visa •••• 4242',
-            transactionId: 'TXN-2024-004'
+const PaymentHistoryScreen = ({ onBack, userRole = 'client', userId }) => {
+    const [paymentHistory, setPaymentHistory] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    // Load payment history based on user role
+    useEffect(() => {
+        const loadPaymentHistory = async () => {
+            try {
+                const endpoint = `/api/${userRole}/payment-history/${userId}`;
+                const response = await fetch(endpoint, {
+                    headers: {
+                        'Authorization': `Bearer ${getUserToken()}`,
+                    }
+                });
+
+                if (response.ok) {
+                    const historyData = await response.json();
+                    setPaymentHistory(historyData);
+                } else {
+                    console.error('Failed to load payment history');
+                }
+            } catch (error) {
+                console.error('Payment history load error:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (userId) {
+            loadPaymentHistory();
         }
-    ]);
+    }, [userId, userRole]);
+
     const scrollY = useRef(new Animated.Value(0)).current;
 
     const renderPaymentItem = ({ item }) => (
@@ -900,13 +1094,20 @@ const PaymentHistoryScreen = ({ onBack }) => {
                 <View style={styles.paymentHistoryRight}>
                     <Text style={[
                         styles.paymentHistoryAmount,
-                        { color: item.amount >= 0 ? theme.colors.text.primary : theme.colors.success }
+                        {
+                            color: userRole === 'client'
+                                ? (item.amount >= 0 ? theme.colors.text.primary : theme.colors.success)
+                                : (item.amount >= 0 ? theme.colors.success : theme.colors.text.primary)
+                        }
                     ]}>
-                        {item.amount >= 0 ? '+' : ''}${Math.abs(item.amount).toFixed(2)}
+                        {userRole === 'client'
+                            ? (item.amount >= 0 ? '+' : '')
+                            : (item.amount >= 0 ? '+' : '-')
+                        }${Math.abs(item.amount).toFixed(2)}
                     </Text>
                     <View style={[
                         styles.paymentStatusBadge,
-                        { backgroundColor: item.status === 'Paid' ? theme.colors.success : theme.colors.warning }
+                        { backgroundColor: item.status === 'Paid' || item.status === 'Received' ? theme.colors.success : theme.colors.warning }
                     ]}>
                         <Text style={styles.paymentStatusText}>{item.status}</Text>
                     </View>
@@ -920,7 +1121,7 @@ const PaymentHistoryScreen = ({ onBack }) => {
         <View style={styles.container}>
             <DynamicHeader
                 type="back"
-                title="Payment History"
+                title={userRole === 'client' ? 'Payment History' : 'Earnings History'}
                 onBack={onBack}
                 scrollY={scrollY}
                 hideOnScroll={true}
@@ -938,8 +1139,12 @@ const PaymentHistoryScreen = ({ onBack }) => {
                 )}
                 ListHeaderComponent={() => (
                     <View style={styles.historyHeader}>
-                        <Text style={styles.historyHeaderTitle}>Payment Transactions</Text>
-                        <Text style={styles.historyHeaderSubtitle}>View all your billing history and transactions</Text>
+                        <Text style={styles.historyHeaderTitle}>
+                            {userRole === 'client' ? 'Payment Transactions' : 'Earnings Transactions'}
+                        </Text>
+                        <Text style={styles.historyHeaderSubtitle}>
+                            {userRole === 'client' ? 'View all your billing history and transactions' : 'View all your earnings and payouts'}
+                        </Text>
                     </View>
                 )}
                 showsVerticalScrollIndicator={false}
@@ -949,22 +1154,37 @@ const PaymentHistoryScreen = ({ onBack }) => {
 };
 
 // Language Coverage Screen
-const LanguageCoverageScreen = ({ onBack }) => {
-    const [languages] = useState([
-        { id: '1', from: 'English', to: 'Spanish', availability: '24/7', interpreters: 156 },
-        { id: '2', from: 'English', to: 'Mandarin', availability: '24/7', interpreters: 89 },
-        { id: '3', from: 'English', to: 'French', availability: '24/7', interpreters: 124 },
-        { id: '4', from: 'English', to: 'Arabic', availability: '24/7', interpreters: 67 },
-        { id: '5', from: 'English', to: 'German', availability: '24/7', interpreters: 98 },
-        { id: '6', from: 'English', to: 'Portuguese', availability: '24/7', interpreters: 76 },
-        { id: '7', from: 'English', to: 'Japanese', availability: '6AM-10PM EST', interpreters: 45 },
-        { id: '8', from: 'English', to: 'Korean', availability: '6AM-10PM EST', interpreters: 38 },
-        { id: '9', from: 'English', to: 'Italian', availability: '24/7', interpreters: 54 },
-        { id: '10', from: 'English', to: 'Russian', availability: '24/7', interpreters: 72 },
-        { id: '11', from: 'Spanish', to: 'Portuguese', availability: '8AM-8PM EST', interpreters: 23 },
-        { id: '12', from: 'French', to: 'Arabic', availability: '8AM-8PM EST', interpreters: 18 }
-    ]);
+const LanguageCoverageScreen = ({ onBack, userRole = 'client', userId }) => {
+    const [languages, setLanguages] = useState([]);
+    const [loading, setLoading] = useState(true);
     const scrollY = useRef(new Animated.Value(0)).current;
+
+    // Load language coverage data
+    useEffect(() => {
+        const loadLanguageCoverage = async () => {
+            try {
+                const endpoint = `/api/${userRole}/language-coverage`;
+                const response = await fetch(endpoint, {
+                    headers: {
+                        'Authorization': `Bearer ${getUserToken()}`,
+                    }
+                });
+
+                if (response.ok) {
+                    const languageData = await response.json();
+                    setLanguages(languageData);
+                } else {
+                    console.error('Failed to load language coverage');
+                }
+            } catch (error) {
+                console.error('Language coverage load error:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        loadLanguageCoverage();
+    }, [userRole]);
 
     const renderLanguageItem = ({ item }) => (
         <View style={styles.languageItem}>
@@ -981,8 +1201,21 @@ const LanguageCoverageScreen = ({ onBack }) => {
                 <View style={styles.languageItemDetails}>
                     <View style={styles.languageItemRow}>
                         <Feather name="users" size={14} color={theme.colors.text.secondary} />
-                        <Text style={styles.interpreterCount}>{item.interpreters} interpreters available</Text>
+                        <Text style={styles.interpreterCount}>
+                            {userRole === 'client'
+                                ? `${item.interpreters} interpreters available`
+                                : `${item.currentDemand} current demand level`
+                            }
+                        </Text>
                     </View>
+                    {userRole === 'interpreter' && item.averageRate && (
+                        <View style={styles.languageItemRow}>
+                            <Feather name="dollar-sign" size={14} color={theme.colors.text.secondary} />
+                            <Text style={styles.interpreterCount}>
+                                Average rate: ${item.averageRate}/hour
+                            </Text>
+                        </View>
+                    )}
                 </View>
             </View>
         </View>
@@ -1010,8 +1243,15 @@ const LanguageCoverageScreen = ({ onBack }) => {
                 )}
                 ListHeaderComponent={() => (
                     <View style={styles.coverageHeader}>
-                        <Text style={styles.coverageHeaderTitle}>Available Language Pairs</Text>
-                        <Text style={styles.coverageHeaderSubtitle}>All supported languages and their availability</Text>
+                        <Text style={styles.coverageHeaderTitle}>
+                            {userRole === 'client' ? 'Available Language Pairs' : 'Language Market Overview'}
+                        </Text>
+                        <Text style={styles.coverageHeaderSubtitle}>
+                            {userRole === 'client'
+                                ? 'All supported languages and their availability'
+                                : 'Market demand and rates for different language pairs'
+                            }
+                        </Text>
                     </View>
                 )}
                 showsVerticalScrollIndicator={false}
@@ -1021,7 +1261,7 @@ const LanguageCoverageScreen = ({ onBack }) => {
 };
 
 // About Screen
-const AboutScreen = ({ onBack }) => {
+const AboutScreen = ({ onBack, userRole = 'client', userId }) => {
     const scrollY = useRef(new Animated.Value(0)).current;
 
     return (
@@ -1090,7 +1330,7 @@ const AboutScreen = ({ onBack }) => {
 };
 
 // Terms Screen
-const TermsScreen = ({ onBack }) => {
+const TermsScreen = ({ onBack, userRole = 'client', userId }) => {
     const scrollY = useRef(new Animated.Value(0)).current;
 
     return (
@@ -1164,7 +1404,7 @@ const TermsScreen = ({ onBack }) => {
 };
 
 // Privacy Policy Screen
-const PrivacyPolicyScreen = ({ onBack }) => {
+const PrivacyPolicyScreen = ({ onBack, userRole = 'client', userId }) => {
     const scrollY = useRef(new Animated.Value(0)).current;
 
     return (
@@ -1233,22 +1473,50 @@ const PrivacyPolicyScreen = ({ onBack }) => {
 };
 
 // Contact Us Screen
-const ContactUsScreen = ({ onBack }) => {
+const ContactUsScreen = ({ onBack, userRole = 'client', userId }) => {
     const [contactForm, setContactForm] = useState({
         subject: '',
         message: '',
-        priority: 'normal'
+        priority: 'normal',
+        category: userRole === 'client' ? 'general' : 'interpreter'
     });
     const [showThankYou, setShowThankYou] = useState(false);
     const scrollY = useRef(new Animated.Value(0)).current;
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (contactForm.subject.trim() && contactForm.message.trim()) {
-            setShowThankYou(true);
-            setTimeout(() => {
-                setShowThankYou(false);
-                setContactForm({ subject: '', message: '', priority: 'normal' });
-            }, 2000);
+            try {
+                const response = await fetch('/api/support/contact', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${getUserToken()}`,
+                    },
+                    body: JSON.stringify({
+                        userId: userId,
+                        userRole: userRole,
+                        ...contactForm
+                    })
+                });
+
+                if (response.ok) {
+                    setShowThankYou(true);
+                    setTimeout(() => {
+                        setShowThankYou(false);
+                        setContactForm({
+                            subject: '',
+                            message: '',
+                            priority: 'normal',
+                            category: userRole === 'client' ? 'general' : 'interpreter'
+                        });
+                    }, 2000);
+                } else {
+                    Alert.alert('Error', 'Failed to send message. Please try again.');
+                }
+            } catch (error) {
+                console.error('Contact form error:', error);
+                Alert.alert('Error', 'Network error. Please check your connection.');
+            }
         } else {
             Alert.alert('Required Fields', 'Please fill in both subject and message fields.');
         }
@@ -1277,7 +1545,10 @@ const ContactUsScreen = ({ onBack }) => {
                     <Feather name="headphones" size={48} color={theme.colors.accent} />
                     <Text style={styles.contactTitle}>We're Here to Help</Text>
                     <Text style={styles.contactSubtitle}>
-                        Get in touch with our support team for any questions or assistance
+                        {userRole === 'client'
+                            ? 'Get in touch with our support team for any questions or assistance'
+                            : 'Connect with our interpreter support team for guidance and assistance'
+                        }
                     </Text>
                 </View>
 
@@ -1286,7 +1557,9 @@ const ContactUsScreen = ({ onBack }) => {
                         <Feather name="mail" size={20} color={theme.colors.primary} />
                         <View style={styles.contactItemContent}>
                             <Text style={styles.contactItemTitle}>Email Support</Text>
-                            <Text style={styles.contactItemValue}>support@languageaccess.com</Text>
+                            <Text style={styles.contactItemValue}>
+                                {userRole === 'client' ? 'support@languageaccess.com' : 'interpreters@languageaccess.com'}
+                            </Text>
                         </View>
                     </View>
 
@@ -1294,7 +1567,9 @@ const ContactUsScreen = ({ onBack }) => {
                         <Feather name="phone" size={20} color={theme.colors.secondary} />
                         <View style={styles.contactItemContent}>
                             <Text style={styles.contactItemTitle}>Phone Support</Text>
-                            <Text style={styles.contactItemValue}>+1 (800) 555-0123</Text>
+                            <Text style={styles.contactItemValue}>
+                                {userRole === 'client' ? '+1 (800) 555-0123' : '+1 (800) 555-0124'}
+                            </Text>
                         </View>
                     </View>
 
@@ -1302,7 +1577,9 @@ const ContactUsScreen = ({ onBack }) => {
                         <Feather name="clock" size={20} color={theme.colors.accent} />
                         <View style={styles.contactItemContent}>
                             <Text style={styles.contactItemTitle}>Support Hours</Text>
-                            <Text style={styles.contactItemValue}>24/7 for urgent issues</Text>
+                            <Text style={styles.contactItemValue}>
+                                {userRole === 'client' ? '24/7 for urgent issues' : 'Mon-Fri 8AM-8PM EST'}
+                            </Text>
                         </View>
                     </View>
                 </View>
@@ -1327,7 +1604,11 @@ const ContactUsScreen = ({ onBack }) => {
                             style={[styles.textInput, styles.textArea]}
                             value={contactForm.message}
                             onChangeText={(text) => setContactForm({ ...contactForm, message: text })}
-                            placeholder="Please describe your question or issue in detail..."
+                            placeholder={
+                                userRole === 'client'
+                                    ? "Please describe your question or issue in detail..."
+                                    : "Please describe your question, technical issue, or feedback..."
+                            }
                             multiline
                             numberOfLines={6}
                             textAlignVertical="top"
@@ -1352,7 +1633,10 @@ const ContactUsScreen = ({ onBack }) => {
                             <Feather name="check-circle" size={48} color={theme.colors.success} />
                             <Text style={styles.thankYouTitle}>Message Sent!</Text>
                             <Text style={styles.thankYouText}>
-                                We'll get back to you within 24 hours.
+                                {userRole === 'client'
+                                    ? "We'll get back to you within 24 hours."
+                                    : "Our interpreter support team will respond within 24 hours."
+                                }
                             </Text>
                         </View>
                     </View>
@@ -1365,7 +1649,7 @@ const ContactUsScreen = ({ onBack }) => {
 };
 
 // Version Screen
-const VersionScreen = ({ onBack }) => {
+const VersionScreen = ({ onBack, userRole = 'client', userId }) => {
     const scrollY = useRef(new Animated.Value(0)).current;
 
     return (
@@ -1436,16 +1720,42 @@ const VersionScreen = ({ onBack }) => {
 };
 
 // Sign Out Confirmation Screen
-const SignOutConfirmationScreen = ({ onBack, onSignOut }) => {
+const SignOutConfirmationScreen = ({ onBack, onSignOut, userRole = 'client', userId }) => {
     const [showModal, setShowModal] = useState(true);
 
-    const handleSignOut = () => {
-        setShowModal(false);
-        // Stub for backend sign out logic
-        setTimeout(() => {
-            Alert.alert('Signed Out', 'You have been successfully signed out.');
-            onSignOut && onSignOut();
-        }, 300);
+    const handleSignOut = async () => {
+        try {
+            // Backend API call to invalidate session
+            const response = await fetch('/api/auth/signout', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getUserToken()}`,
+                },
+                body: JSON.stringify({
+                    userId: userId,
+                    userRole: userRole
+                })
+            });
+
+            if (response.ok) {
+                setShowModal(false);
+                setTimeout(() => {
+                    Alert.alert('Signed Out', 'You have been successfully signed out.');
+                    onSignOut && onSignOut();
+                }, 300);
+            } else {
+                Alert.alert('Error', 'Failed to sign out. Please try again.');
+            }
+        } catch (error) {
+            console.error('Sign out error:', error);
+            // Still proceed with local sign out even if API fails
+            setShowModal(false);
+            setTimeout(() => {
+                Alert.alert('Signed Out', 'You have been successfully signed out.');
+                onSignOut && onSignOut();
+            }, 300);
+        }
     };
 
     const handleCancel = () => {
@@ -1467,7 +1777,10 @@ const SignOutConfirmationScreen = ({ onBack, onSignOut }) => {
 
                     <Text style={styles.confirmationTitle}>Sign Out</Text>
                     <Text style={styles.confirmationMessage}>
-                        Are you sure you want to sign out of your account? You'll need to sign in again to access your account.
+                        {userRole === 'client'
+                            ? "Are you sure you want to sign out of your account? You'll need to sign in again to access your account."
+                            : "Are you sure you want to sign out? You'll need to sign in again to access your interpreter dashboard and receive new requests."
+                        }
                     </Text>
 
                     <View style={styles.confirmationButtons}>
@@ -1492,7 +1805,7 @@ const SignOutConfirmationScreen = ({ onBack, onSignOut }) => {
 };
 
 // Delete Account Screen
-const DeleteAccountScreen = ({ onBack, onDeleteAccount }) => {
+const DeleteAccountScreen = ({ onBack, onDeleteAccount, userRole = 'client', userId }) => {
     const [showModal, setShowModal] = useState(true);
     const [confirmationText, setConfirmationText] = useState('');
     const [isConfirmed, setIsConfirmed] = useState(false);
@@ -1501,26 +1814,73 @@ const DeleteAccountScreen = ({ onBack, onDeleteAccount }) => {
         setIsConfirmed(confirmationText.toLowerCase() === 'delete my account');
     }, [confirmationText]);
 
-    const handleDeleteAccount = () => {
+    const handleDeleteAccount = async () => {
         if (!isConfirmed) {
             Alert.alert('Confirmation Required', 'Please type "DELETE MY ACCOUNT" to confirm.');
             return;
         }
 
-        setShowModal(false);
-        // Stub for backend account deletion logic
-        setTimeout(() => {
-            Alert.alert(
-                'Account Deletion Initiated',
-                'Your account deletion request has been submitted. You will receive a confirmation email within 24 hours.',
-                [{ text: 'OK', onPress: () => onDeleteAccount && onDeleteAccount() }]
-            );
-        }, 300);
+        try {
+            // Backend API call to delete account
+            const response = await fetch('/api/auth/delete-account', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${getUserToken()}`,
+                },
+                body: JSON.stringify({
+                    userId: userId,
+                    userRole: userRole,
+                    confirmation: confirmationText
+                })
+            });
+
+            if (response.ok) {
+                setShowModal(false);
+                setTimeout(() => {
+                    Alert.alert(
+                        'Account Deletion Initiated',
+                        userRole === 'client'
+                            ? 'Your account deletion request has been submitted. You will receive a confirmation email within 24 hours.'
+                            : 'Your interpreter account deletion request has been submitted. All pending sessions will be completed before deletion. You will receive a confirmation email within 24 hours.',
+                        [{ text: 'OK', onPress: () => onDeleteAccount && onDeleteAccount() }]
+                    );
+                }, 300);
+            } else {
+                const errorData = await response.json();
+                Alert.alert('Error', errorData.message || 'Failed to delete account. Please try again.');
+            }
+        } catch (error) {
+            console.error('Delete account error:', error);
+            Alert.alert('Error', 'Network error. Please try again later.');
+        }
     };
 
     const handleCancel = () => {
         setShowModal(false);
         onBack();
+    };
+
+    const getWarningItems = () => {
+        const baseItems = [
+            { icon: 'user', text: 'Your profile and personal information', color: theme.colors.error },
+            { icon: 'message-circle', text: 'Saved messages and conversations', color: theme.colors.accent },
+            { icon: 'credit-card', text: 'Saved payment methods', color: theme.colors.secondary }
+        ];
+
+        if (userRole === 'client') {
+            return [
+                ...baseItems,
+                { icon: 'phone', text: 'All call and payment history', color: theme.colors.warning }
+            ];
+        } else {
+            return [
+                ...baseItems,
+                { icon: 'phone', text: 'All session and earnings history', color: theme.colors.warning },
+                { icon: 'star', text: 'Your ratings and reviews', color: theme.colors.primary },
+                { icon: 'award', text: 'Professional certifications and verifications', color: theme.colors.success }
+            ];
+        }
     };
 
     return (
@@ -1538,26 +1898,16 @@ const DeleteAccountScreen = ({ onBack, onDeleteAccount }) => {
 
                         <Text style={styles.confirmationTitle}>Delete Account</Text>
                         <Text style={styles.confirmationMessage}>
-                            This action cannot be undone. Deleting your account will permanently remove:
+                            This action cannot be undone. Deleting your {userRole} account will permanently remove:
                         </Text>
 
                         <View style={styles.deleteWarningList}>
-                            <View style={styles.deleteWarningItem}>
-                                <Feather name="user" size={16} color={theme.colors.error} />
-                                <Text style={styles.deleteWarningText}>Your profile and personal information</Text>
-                            </View>
-                            <View style={styles.deleteWarningItem}>
-                                <Feather name="phone" size={16} color={theme.colors.warning} />
-                                <Text style={styles.deleteWarningText}>All call and payment history</Text>
-                            </View>
-                            <View style={styles.deleteWarningItem}>
-                                <Feather name="message-circle" size={16} color={theme.colors.accent} />
-                                <Text style={styles.deleteWarningText}>Saved messages and conversations</Text>
-                            </View>
-                            <View style={styles.deleteWarningItem}>
-                                <Feather name="credit-card" size={16} color={theme.colors.secondary} />
-                                <Text style={styles.deleteWarningText}>Saved payment methods</Text>
-                            </View>
+                            {getWarningItems().map((item, index) => (
+                                <View key={index} style={styles.deleteWarningItem}>
+                                    <Feather name={item.icon} size={16} color={item.color} />
+                                    <Text style={styles.deleteWarningText}>{item.text}</Text>
+                                </View>
+                            ))}
                         </View>
 
                         <View style={styles.confirmationInput}>
@@ -1605,17 +1955,17 @@ const DeleteAccountScreen = ({ onBack, onDeleteAccount }) => {
 };
 
 // Main Profile Screen Component
-const MainProfileScreen = ({ onNavigate, onBack }) => {
+const MainProfileScreen = ({ onNavigate, onBack, userRole = 'client', userId = 'default-client-id' }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const scrollY = useRef(new Animated.Value(0)).current;
 
     // Dynamic user data state - this would typically come from your backend/API
     const [userData, setUserData] = useState({
-        firstName: 'John',
-        lastName: 'Anderson',
-        email: 'john.anderson@company.com',
-        company: 'Tech Solutions Inc.',
-        jobTitle: 'Operations Manager',
+        firstName: userRole === 'client' ? 'John' : 'Maria',
+        lastName: userRole === 'client' ? 'Anderson' : 'Rodriguez',
+        email: userRole === 'client' ? 'john.anderson@company.com' : 'maria.rodriguez@languageaccess.com',
+        company: userRole === 'client' ? 'Tech Solutions Inc.' : '',
+        jobTitle: userRole === 'client' ? 'Operations Manager' : 'Certified Spanish Interpreter',
         profileCompletion: 85,
         isVerified: true,
         memberSince: '2023',
@@ -1633,10 +1983,29 @@ const MainProfileScreen = ({ onNavigate, onBack }) => {
             useNativeDriver: false,
         }).start();
 
-        // Simulate fetching user data from backend
-        // In real app, you'd call your API here
-        // fetchUserProfile().then(setUserData);
-    }, []);
+        // Load user profile data from backend
+        const loadUserProfile = async () => {
+            try {
+                const endpoint = userRole === 'client' ? '/api/client/profile' : '/api/interpreter/profile';
+                const response = await fetch(`${endpoint}/${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${getUserToken()}`,
+                    }
+                });
+
+                if (response.ok) {
+                    const profileData = await response.json();
+                    setUserData(profileData);
+                }
+            } catch (error) {
+                console.error('User profile load error:', error);
+            }
+        };
+
+        if (userId) {
+            loadUserProfile();
+        }
+    }, [userId, userRole]);
 
     const handleSignOut = () => {
         Alert.alert(

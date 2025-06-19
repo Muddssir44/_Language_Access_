@@ -13,8 +13,15 @@ import { Feather } from '@expo/vector-icons';
 import DynamicHeader from '../Components/DynamicHeader';
 import { theme, getHeaderHeight } from '../Components/theme';
 
+// Helper function to get user token (to be implemented with actual auth)
+const getUserToken = () => {
+    // This should return the actual JWT token from your auth system
+    // For now, returning a placeholder
+    return 'your-jwt-token-here';
+};
+
 // Enhanced Notification Item Component
-const NotificationItem = ({ notification, onPress, index }) => {
+const NotificationItem = ({ notification, onPress, index, userRole = 'client' }) => {
     const scaleAnim = useRef(new Animated.Value(0.8)).current;
     const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -62,6 +69,10 @@ const NotificationItem = ({ notification, onPress, index }) => {
                 return { name: 'clock', color: theme.colors.secondary };
             case 'system':
                 return { name: 'bell', color: theme.colors.warning };
+            case 'verification':
+                return { name: 'shield-check', color: theme.colors.success };
+            case 'earnings':
+                return { name: 'trending-up', color: theme.colors.primary };
             default:
                 return { name: 'bell', color: theme.colors.primary };
         }
@@ -79,6 +90,53 @@ const NotificationItem = ({ notification, onPress, index }) => {
     };
 
     const icon = getNotificationIcon(notification.type);
+
+    // Customize notification content based on user role
+    const getNotificationTitle = () => {
+        if (userRole === 'interpreter') {
+            switch (notification.type) {
+                case 'session':
+                    return notification.title.replace('Session Reminder', 'Client Session Reminder');
+                case 'payment':
+                    return notification.title.replace('Payment Received', 'Earnings Received');
+                case 'booking':
+                    return notification.title.replace('Booking Confirmed', 'Session Request Accepted');
+                default:
+                    return notification.title;
+            }
+        }
+        return notification.title;
+    };
+
+    const getNotificationDescription = () => {
+        if (userRole === 'interpreter') {
+            switch (notification.type) {
+                case 'payment':
+                    return notification.description.replace('credited to your account', 'added to your earnings');
+                case 'booking':
+                    return notification.description.replace('booking with', 'session request from');
+                default:
+                    return notification.description;
+            }
+        }
+        return notification.description;
+    };
+
+    const getActionText = () => {
+        if (userRole === 'interpreter') {
+            switch (notification.type) {
+                case 'payment':
+                    return 'View earnings';
+                case 'booking':
+                    return 'View session';
+                case 'session':
+                    return 'Join session';
+                default:
+                    return notification.action;
+            }
+        }
+        return notification.action;
+    };
 
     return (
         <Animated.View
@@ -104,18 +162,18 @@ const NotificationItem = ({ notification, onPress, index }) => {
                 <View style={styles.notificationContent}>
                     <View style={styles.notificationHeader}>
                         <Text style={[styles.notificationTitle, notification.unread && styles.unreadTitle]}>
-                            {notification.title}
+                            {getNotificationTitle()}
                         </Text>
                         <Text style={styles.notificationTime}>
                             {getTimeAgo(notification.timestamp)}
                         </Text>
                     </View>
                     <Text style={styles.notificationDescription}>
-                        {notification.description}
+                        {getNotificationDescription()}
                     </Text>
                     {notification.action && (
                         <View style={styles.actionContainer}>
-                            <Text style={styles.actionText}>{notification.action}</Text>
+                            <Text style={styles.actionText}>{getActionText()}</Text>
                             <Feather name="chevron-right" size={14} color={theme.colors.primary} />
                         </View>
                     )}
@@ -127,7 +185,7 @@ const NotificationItem = ({ notification, onPress, index }) => {
 };
 
 // Empty State Component
-const EmptyState = () => {
+const EmptyState = ({ userRole = 'client' }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
@@ -145,101 +203,138 @@ const EmptyState = () => {
             </View>
             <Text style={styles.emptyStateTitle}>No notifications yet</Text>
             <Text style={styles.emptyStateSubtitle}>
-                You'll see important updates and reminders here
+                {userRole === 'client'
+                    ? "You'll see important updates and reminders here"
+                    : "You'll see session requests, earnings updates, and important reminders here"
+                }
             </Text>
         </Animated.View>
     );
 };
 
-const NotificationScreen = ({ navigation }) => {
-    const [notifications, setNotifications] = useState([
-        {
-            id: '1',
-            type: 'message',
-            title: 'New Message from Maria',
-            description: 'Maria Rodriguez sent you a message about your upcoming legal interpretation session.',
-            timestamp: new Date(Date.now() - 2 * 60 * 1000), // 2 minutes ago
-            unread: true,
-            action: 'Reply now',
-        },
-        {
-            id: '2',
-            type: 'session',
-            title: 'Session Reminder',
-            description: 'Your interpretation session with Dr. Ahmad starts in 30 minutes.',
-            timestamp: new Date(Date.now() - 30 * 60 * 1000), // 30 minutes ago
-            unread: true,
-            action: 'Join session',
-        },
-        {
-            id: '3',
-            type: 'payment',
-            title: 'Payment Received',
-            description: 'Payment of $120 has been credited to your account for the medical consultation.',
-            timestamp: new Date(Date.now() - 60 * 60 * 1000), // 1 hour ago
-            unread: false,
-            action: 'View details',
-        },
-        {
-            id: '4',
-            type: 'booking',
-            title: 'Booking Confirmed',
-            description: 'Your booking with Jean-Pierre for French interpretation has been confirmed.',
-            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
-            unread: false,
-            action: 'View booking',
-        },
-        {
-            id: '5',
-            type: 'system',
-            title: 'App Update Available',
-            description: 'A new version of LanguageAccess is available with improved features.',
-            timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000), // 1 day ago
-            unread: false,
-            action: 'Update now',
-        },
-    ]);
-
+const NotificationScreen = ({ navigation, userRole = 'client', userId }) => {
+    const [notifications, setNotifications] = useState([]);
     const [refreshing, setRefreshing] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    // Load notifications based on user role
+    useEffect(() => {
+        const loadNotifications = async () => {
+            try {
+                const endpoint = `/api/${userRole}/notifications/${userId}`;
+                const response = await fetch(endpoint, {
+                    headers: {
+                        'Authorization': `Bearer ${getUserToken()}`,
+                    }
+                });
+
+                if (response.ok) {
+                    const notificationsData = await response.json();
+                    setNotifications(notificationsData);
+                } else {
+                    console.error('Failed to load notifications');
+                }
+            } catch (error) {
+                console.error('Notifications load error:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        if (userId) {
+            loadNotifications();
+        }
+    }, [userId, userRole]);
 
     const handleBack = () => {
         navigation.goBack();
     };
 
-    const handleNotificationPress = (notification) => {
-        // Mark as read
-        setNotifications(notifications.map(notif =>
-            notif.id === notification.id
-                ? { ...notif, unread: false }
-                : notif
-        ));
+    const handleNotificationPress = async (notification) => {
+        try {
+            // Mark notification as read
+            await fetch(`/api/${userRole}/notifications/${notification.id}/mark-read`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${getUserToken()}`,
+                }
+            });
 
-        // Handle different notification types
+            // Update local state
+            setNotifications(notifications.map(notif =>
+                notif.id === notification.id
+                    ? { ...notif, unread: false }
+                    : notif
+            ));
+        } catch (error) {
+            console.error('Mark notification read error:', error);
+        }
+
+        // Handle different notification types based on user role
         switch (notification.type) {
             case 'message':
-                navigation.navigate('Messages', { interpreterId: notification.id });
+                navigation.navigate('Messages', {
+                    interpreterId: userRole === 'client' ? notification.relatedId : undefined,
+                    clientId: userRole === 'interpreter' ? notification.relatedId : undefined
+                });
                 break;
             case 'session':
-                // Navigate to session screen
-                console.log('Navigate to session');
+                if (userRole === 'client') {
+                    // Navigate to client session screen
+                    console.log('Navigate to client session');
+                } else {
+                    // Navigate to interpreter session screen
+                    console.log('Navigate to interpreter session');
+                }
                 break;
             case 'payment':
-                navigation.navigate('ClientProfile', { screen: 'paymentHistory' });
+                if (userRole === 'client') {
+                    navigation.navigate('ClientProfile', { screen: 'paymentHistory' });
+                } else {
+                    navigation.navigate('InterpreterProfile', { screen: 'earningsHistory' });
+                }
                 break;
             case 'booking':
-                navigation.navigate('ClientProfile', { screen: 'callHistory' });
+                if (userRole === 'client') {
+                    navigation.navigate('ClientProfile', { screen: 'callHistory' });
+                } else {
+                    navigation.navigate('InterpreterProfile', { screen: 'callHistory' });
+                }
+                break;
+            case 'verification':
+                if (userRole === 'interpreter') {
+                    navigation.navigate('InterpreterProfile', { screen: 'verificationRequest' });
+                }
+                break;
+            case 'earnings':
+                if (userRole === 'interpreter') {
+                    navigation.navigate('InterpreterProfile', { screen: 'earningsHistory' });
+                }
                 break;
             default:
                 console.log('Handle notification:', notification.title);
         }
     };
 
-    const handleRefresh = () => {
+    const handleRefresh = async () => {
         setRefreshing(true);
-        // Simulate refresh
-        setTimeout(() => {
+        try {
+            const endpoint = `/api/${userRole}/notifications/${userId}`;
+            const response = await fetch(endpoint, {
+                headers: {
+                    'Authorization': `Bearer ${getUserToken()}`,
+                }
+            });
+
+            if (response.ok) {
+                const notificationsData = await response.json();
+                setNotifications(notificationsData);
+            }
+        } catch (error) {
+            console.error('Refresh notifications error:', error);
+        } finally {
             setRefreshing(false);
-        }, 1000);
+        }
     };
 
     const renderNotificationItem = ({ item, index }) => (
@@ -247,6 +342,7 @@ const NotificationScreen = ({ navigation }) => {
             notification={item}
             onPress={handleNotificationPress}
             index={index}
+            userRole={userRole}
         />
     );
 
@@ -259,8 +355,12 @@ const NotificationScreen = ({ navigation }) => {
                 showSearch={false}
             />
 
-            {notifications.length === 0 ? (
-                <EmptyState />
+            {loading ? (
+                <View style={styles.loadingContainer}>
+                    <Text style={styles.loadingText}>Loading notifications...</Text>
+                </View>
+            ) : notifications.length === 0 ? (
+                <EmptyState userRole={userRole} />
             ) : (
                 <FlatList
                     data={notifications}
@@ -390,6 +490,15 @@ const styles = StyleSheet.create({
         color: theme.colors.text.secondary,
         textAlign: 'center',
         lineHeight: 24,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        ...theme.typography.body,
+        color: theme.colors.text.primary,
     },
 });
 

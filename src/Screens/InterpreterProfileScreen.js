@@ -44,8 +44,15 @@ import {
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
+// Helper function to get user token (to be implemented with actual auth)
+const getUserToken = () => {
+    // This should return the actual JWT token from your auth system
+    // For now, returning a placeholder
+    return 'your-jwt-token-here';
+};
+
 // Main Interpreter Profile Screen
-const InterpreterProfileScreen = ({ navigation }) => {
+const InterpreterProfileScreen = ({ navigation, userId = 'default-interpreter-id' }) => {
     const [currentScreen, setCurrentScreen] = useState('main');
     const [fadeAnim] = useState(new Animated.Value(1));
 
@@ -90,9 +97,9 @@ const InterpreterProfileScreen = ({ navigation }) => {
         switch (currentScreen) {
             // Profile Settings Screens
             case 'myProfile':
-                return <MyProfileScreen onBack={handleBack} />;
+                return <MyProfileScreen onBack={handleBack} userRole="interpreter" userId={userId} />;
             case 'changePassword':
-                return <ChangePasswordScreen onBack={handleBack} />;
+                return <ChangePasswordScreen onBack={handleBack} userRole="interpreter" userId={userId} />;
             case 'verificationRequest':
                 return <VerificationRequestScreen onBack={handleBack} />;
             case 'callRates':
@@ -100,11 +107,11 @@ const InterpreterProfileScreen = ({ navigation }) => {
 
             // Payment Settings Screens
             case 'cardRegistration':
-                return <CardRegistrationScreen onBack={handleBack} />;
+                return <CardRegistrationScreen onBack={handleBack} userRole="interpreter" userId={userId} />;
             case 'callHistory':
-                return <CallHistoryScreen onBack={handleBack} />;
+                return <CallHistoryScreen onBack={handleBack} userRole="interpreter" userId={userId} />;
             case 'paymentHistory':
-                return <PaymentHistoryScreen onBack={handleBack} />;
+                return <PaymentHistoryScreen onBack={handleBack} userRole="interpreter" userId={userId} />;
             case 'cashOut':
                 return <CashOutScreen onBack={handleBack} />;
             case 'earningsHistory':
@@ -114,26 +121,26 @@ const InterpreterProfileScreen = ({ navigation }) => {
 
             // About LanguageAccess Screens
             case 'languageCoverage':
-                return <LanguageCoverageScreen onBack={handleBack} />;
+                return <LanguageCoverageScreen onBack={handleBack} userRole="interpreter" userId={userId} />;
             case 'about':
-                return <AboutScreen onBack={handleBack} />;
+                return <AboutScreen onBack={handleBack} userRole="interpreter" userId={userId} />;
             case 'terms':
-                return <TermsScreen onBack={handleBack} />;
+                return <TermsScreen onBack={handleBack} userRole="interpreter" userId={userId} />;
             case 'privacy':
-                return <PrivacyPolicyScreen onBack={handleBack} />;
+                return <PrivacyPolicyScreen onBack={handleBack} userRole="interpreter" userId={userId} />;
             case 'contact':
-                return <ContactUsScreen onBack={handleBack} />;
+                return <ContactUsScreen onBack={handleBack} userRole="interpreter" userId={userId} />;
             case 'version':
-                return <VersionScreen onBack={handleBack} />;
+                return <VersionScreen onBack={handleBack} userRole="interpreter" userId={userId} />;
 
             // Account Settings Screens
             case 'signOut':
-                return <SignOutConfirmationScreen onBack={handleBack} onSignOut={handleSignOut} />;
+                return <SignOutConfirmationScreen onBack={handleBack} onSignOut={handleSignOut} userRole="interpreter" userId={userId} />;
             case 'deleteAccount':
-                return <DeleteAccountScreen onBack={handleBack} onDeleteAccount={handleDeleteAccount} />;
+                return <DeleteAccountScreen onBack={handleBack} onDeleteAccount={handleDeleteAccount} userRole="interpreter" userId={userId} />;
 
             default:
-                return <MainInterpreterProfileScreen onNavigate={navigateToScreen} onBack={handleBack} />;
+                return <MainInterpreterProfileScreen onNavigate={navigateToScreen} onBack={handleBack} userId={userId} />;
         }
     };
 
@@ -145,7 +152,7 @@ const InterpreterProfileScreen = ({ navigation }) => {
 };
 
 // Main Interpreter Profile Screen Component
-const MainInterpreterProfileScreen = ({ onNavigate, onBack }) => {
+const MainInterpreterProfileScreen = ({ onNavigate, onBack, userId = 'default-interpreter-id' }) => {
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const scrollY = useRef(new Animated.Value(0)).current;
 
@@ -179,10 +186,28 @@ const MainInterpreterProfileScreen = ({ onNavigate, onBack }) => {
             useNativeDriver: false,
         }).start();
 
-        // Simulate fetching interpreter data from backend
-        // In real app, you'd call your API here
-        // fetchInterpreterProfile().then(setInterpreterData);
-    }, []);
+        // Load interpreter profile data from backend
+        const loadInterpreterProfile = async () => {
+            try {
+                const response = await fetch(`/api/interpreter/profile/${userId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${getUserToken()}`,
+                    }
+                });
+
+                if (response.ok) {
+                    const profileData = await response.json();
+                    setInterpreterData(profileData);
+                }
+            } catch (error) {
+                console.error('Interpreter profile load error:', error);
+            }
+        };
+
+        if (userId) {
+            loadInterpreterProfile();
+        }
+    }, [userId]);
 
     const handleSignOut = () => {
         Alert.alert(

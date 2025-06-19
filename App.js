@@ -35,13 +35,13 @@ function App() {
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
-        initialRouteName="InterpreterHome"
+        initialRouteName="Splash"
       >
         {/* Entry Flow */}
-        {/* <Stack.Screen name="Splash" component={SplashScreen} /> */}
-        {/* <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
+        <Stack.Screen name="Splash" component={SplashScreen} />
+        <Stack.Screen name="RoleSelection" component={RoleSelectionScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Register" component={RegisterScreen} /> */}
+        <Stack.Screen name="Register" component={RegisterScreen} />
 
         {/* Client Screens */}
         <Stack.Screen name="ClientHome" component={ClientHomeScreen} />

@@ -23,152 +23,26 @@ import CashOutScreen from './CashOutScreen';
 import EarningsScreen from './EarningsScreen';
 import StripeConnectScreen from './StripeConnectScreen';
 
+// Import shared components from ClientProfileScreen
+import {
+    MyProfileScreen,
+    ChangePasswordScreen,
+    CardRegistrationScreen,
+    CallHistoryScreen,
+    PaymentHistoryScreen,
+    LanguageCoverageScreen,
+    AboutScreen,
+    TermsScreen,
+    PrivacyPolicyScreen,
+    ContactUsScreen,
+    VersionScreen,
+    SignOutConfirmationScreen,
+    DeleteAccountScreen,
+    ProfileListItem,
+    SectionHeader
+} from './ClientProfileScreen';
+
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-
-// Placeholder components for screens that would be shared with ClientProfile
-const MyProfileScreen = ({ onBack }) => (
-    <View style={styles.placeholderScreen}>
-        <DynamicHeader title="My Profile" onBack={onBack} />
-        <View style={styles.placeholderContent}>
-            <Text style={styles.placeholderText}>My Profile Screen - To be implemented</Text>
-        </View>
-    </View>
-);
-
-const ChangePasswordScreen = ({ onBack }) => (
-    <View style={styles.placeholderScreen}>
-        <DynamicHeader title="Change Password" onBack={onBack} />
-        <View style={styles.placeholderContent}>
-            <Text style={styles.placeholderText}>Change Password Screen - To be implemented</Text>
-        </View>
-    </View>
-);
-
-const CardRegistrationScreen = ({ onBack }) => (
-    <View style={styles.placeholderScreen}>
-        <DynamicHeader title="Card Registration" onBack={onBack} />
-        <View style={styles.placeholderContent}>
-            <Text style={styles.placeholderText}>Card Registration Screen - To be implemented</Text>
-        </View>
-    </View>
-);
-
-const CallHistoryScreen = ({ onBack }) => (
-    <View style={styles.placeholderScreen}>
-        <DynamicHeader title="Call History" onBack={onBack} />
-        <View style={styles.placeholderContent}>
-            <Text style={styles.placeholderText}>Call History Screen - To be implemented</Text>
-        </View>
-    </View>
-);
-
-const PaymentHistoryScreen = ({ onBack }) => (
-    <View style={styles.placeholderScreen}>
-        <DynamicHeader title="Payment History" onBack={onBack} />
-        <View style={styles.placeholderContent}>
-            <Text style={styles.placeholderText}>Payment History Screen - To be implemented</Text>
-        </View>
-    </View>
-);
-
-const LanguageCoverageScreen = ({ onBack }) => (
-    <View style={styles.placeholderScreen}>
-        <DynamicHeader title="Language Coverage" onBack={onBack} />
-        <View style={styles.placeholderContent}>
-            <Text style={styles.placeholderText}>Language Coverage Screen - To be implemented</Text>
-        </View>
-    </View>
-);
-
-const AboutScreen = ({ onBack }) => (
-    <View style={styles.placeholderScreen}>
-        <DynamicHeader title="About" onBack={onBack} />
-        <View style={styles.placeholderContent}>
-            <Text style={styles.placeholderText}>About Screen - To be implemented</Text>
-        </View>
-    </View>
-);
-
-const TermsScreen = ({ onBack }) => (
-    <View style={styles.placeholderScreen}>
-        <DynamicHeader title="Terms of Service" onBack={onBack} />
-        <View style={styles.placeholderContent}>
-            <Text style={styles.placeholderText}>Terms Screen - To be implemented</Text>
-        </View>
-    </View>
-);
-
-const PrivacyPolicyScreen = ({ onBack }) => (
-    <View style={styles.placeholderScreen}>
-        <DynamicHeader title="Privacy Policy" onBack={onBack} />
-        <View style={styles.placeholderContent}>
-            <Text style={styles.placeholderText}>Privacy Policy Screen - To be implemented</Text>
-        </View>
-    </View>
-);
-
-const ContactUsScreen = ({ onBack }) => (
-    <View style={styles.placeholderScreen}>
-        <DynamicHeader title="Contact Us" onBack={onBack} />
-        <View style={styles.placeholderContent}>
-            <Text style={styles.placeholderText}>Contact Us Screen - To be implemented</Text>
-        </View>
-    </View>
-);
-
-const VersionScreen = ({ onBack }) => (
-    <View style={styles.placeholderScreen}>
-        <DynamicHeader title="Version Info" onBack={onBack} />
-        <View style={styles.placeholderContent}>
-            <Text style={styles.placeholderText}>Version Screen - To be implemented</Text>
-        </View>
-    </View>
-);
-
-const SignOutConfirmationScreen = ({ onBack, onSignOut }) => (
-    <View style={styles.placeholderScreen}>
-        <DynamicHeader title="Sign Out" onBack={onBack} />
-        <View style={styles.placeholderContent}>
-            <Text style={styles.placeholderText}>Sign Out Confirmation - To be implemented</Text>
-            <TouchableOpacity style={styles.placeholderButton} onPress={onSignOut}>
-                <Text style={styles.placeholderButtonText}>Sign Out</Text>
-            </TouchableOpacity>
-        </View>
-    </View>
-);
-
-const DeleteAccountScreen = ({ onBack, onDeleteAccount }) => (
-    <View style={styles.placeholderScreen}>
-        <DynamicHeader title="Delete Account" onBack={onBack} />
-        <View style={styles.placeholderContent}>
-            <Text style={styles.placeholderText}>Delete Account Screen - To be implemented</Text>
-            <TouchableOpacity style={styles.placeholderButton} onPress={onDeleteAccount}>
-                <Text style={styles.placeholderButtonText}>Delete Account</Text>
-            </TouchableOpacity>
-        </View>
-    </View>
-);
-
-// Reusable Profile List Item Component
-const ProfileListItem = ({ icon, title, subtitle, onPress, iconColor, rightComponent }) => (
-    <TouchableOpacity style={styles.profileListItem} onPress={onPress} activeOpacity={0.7}>
-        <View style={[styles.profileListIcon, { backgroundColor: iconColor }]}>
-            <Feather name={icon} size={20} color={theme.colors.text.white} />
-        </View>
-        <View style={styles.profileListContent}>
-            <Text style={styles.profileListTitle}>{title}</Text>
-            <Text style={styles.profileListSubtitle}>{subtitle}</Text>
-        </View>
-        {rightComponent || <Feather name="chevron-right" size={20} color={theme.colors.text.light} />}
-    </TouchableOpacity>
-);
-
-// Section Header Component
-const SectionHeader = ({ title }) => (
-    <View style={styles.sectionHeader}>
-        <Text style={styles.sectionHeaderTitle}>{title}</Text>
-    </View>
-);
 
 // Main Interpreter Profile Screen
 const InterpreterProfileScreen = ({ navigation }) => {
@@ -201,14 +75,14 @@ const InterpreterProfileScreen = ({ navigation }) => {
     const handleSignOut = () => {
         navigation.reset({
             index: 0,
-            routes: [{ name: 'SignIn' }],
+            routes: [{ name: 'Login' }],
         });
     };
 
     const handleDeleteAccount = () => {
         navigation.reset({
             index: 0,
-            routes: [{ name: 'SignIn' }],
+            routes: [{ name: 'Login' }],
         });
     };
 
@@ -996,35 +870,6 @@ const styles = StyleSheet.create({
         textTransform: 'uppercase',
         fontSize: 12,
         letterSpacing: 0.5,
-    },
-
-    // Placeholder Screen Styles
-    placeholderScreen: {
-        flex: 1,
-        backgroundColor: theme.colors.background,
-    },
-    placeholderContent: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: theme.spacing.xl,
-    },
-    placeholderText: {
-        ...theme.typography.body,
-        color: theme.colors.text.secondary,
-        textAlign: 'center',
-        marginBottom: theme.spacing.lg,
-    },
-    placeholderButton: {
-        backgroundColor: theme.colors.primary,
-        paddingHorizontal: theme.spacing.lg,
-        paddingVertical: theme.spacing.md,
-        borderRadius: theme.borderRadius.md,
-    },
-    placeholderButtonText: {
-        ...theme.typography.bodyMedium,
-        color: theme.colors.text.white,
-        fontWeight: '600',
     },
 });
 

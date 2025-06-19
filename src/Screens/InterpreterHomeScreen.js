@@ -463,7 +463,7 @@ const InterpreterHomeScreen = ({ navigation }) => {
         <View style={styles.container}>
             <DynamicHeader
                 type="home"
-                title="LanguageAccess Pro"
+                title="LanguageAccess "
                 showBell={true}
                 showProfile={true}
                 onBell={handleNotification}

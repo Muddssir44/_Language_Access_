@@ -119,7 +119,7 @@ const ClientProfileScreen = ({ navigation, route }) => {
         // Navigate to sign in screen or handle sign out logic
         navigation.reset({
             index: 0,
-            routes: [{ name: 'SignIn' }],
+            routes: [{ name: 'Login' }],
         });
     };
 
@@ -127,7 +127,7 @@ const ClientProfileScreen = ({ navigation, route }) => {
         // Navigate to sign in screen after account deletion
         navigation.reset({
             index: 0,
-            routes: [{ name: 'SignIn' }],
+            routes: [{ name: 'Login' }],
         });
     };
 

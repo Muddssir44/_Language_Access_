@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import DynamicHeader from '../Components/DynamicHeader';
+import BottomNavBar from '../Components/BottomNavBar';
 import { theme, getHeaderHeight } from '../Components/theme';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -472,6 +473,7 @@ const InterpreterHomeScreen = ({ navigation }) => {
 
             <Animated.ScrollView
                 style={[styles.scrollView, { paddingTop: getHeaderHeight() }]}
+                contentContainerStyle={styles.scrollViewContent}
                 showsVerticalScrollIndicator={false}
                 onScroll={Animated.event(
                     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -491,6 +493,12 @@ const InterpreterHomeScreen = ({ navigation }) => {
                 />
                 <TipsSection onTipPress={handleTipPress} />
             </Animated.ScrollView>
+
+            <BottomNavBar
+                navigation={navigation}
+                activeTab="Home"
+                userRole="interpreter"
+            />
         </View>
     );
 };
@@ -531,6 +539,10 @@ const styles = StyleSheet.create({
     // Scroll View
     scrollView: {
         flex: 1,
+    },
+
+    scrollViewContent: {
+        paddingBottom: 100, // Provide space for bottom navigation
     },
 
     // Profile Snapshot Section Styles

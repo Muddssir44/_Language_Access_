@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import DynamicHeader from '../Components/DynamicHeader';
+import BottomNavBar from '../Components/BottomNavBar';
 import { theme, getHeaderHeight } from '../Components/theme';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -724,6 +725,10 @@ const styles = StyleSheet.create({
         flex: 1,
     },
 
+    scrollViewContent: {
+        paddingBottom: 100, // Provide space for bottom navigation
+    },
+
     // Client Dashboard Section
     dashboardSection: {
         margin: theme.spacing.md,
@@ -1430,6 +1435,7 @@ const ClientHomeScreen = ({ navigation }) => {
 
             <Animated.ScrollView
                 style={[styles.scrollView, { paddingTop: getHeaderHeight() }]}
+                contentContainerStyle={styles.scrollViewContent}
                 showsVerticalScrollIndicator={false}
                 onScroll={Animated.event(
                     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -1456,6 +1462,12 @@ const ClientHomeScreen = ({ navigation }) => {
                 />
                 <ClientTipsSection onTipPress={handleTipPress} />
             </Animated.ScrollView>
+
+            <BottomNavBar
+                navigation={navigation}
+                activeTab="Home"
+                userRole="client"
+            />
         </View>
     );
 };

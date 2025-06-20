@@ -680,7 +680,7 @@ const styles = StyleSheet.create({
 
     // Bottom Spacing
     bottomSpacing: {
-        height: theme.spacing.xl,
+        height: 100,
     },
 });
 

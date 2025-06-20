@@ -35,7 +35,7 @@ function App() {
     <NavigationContainer>
       <Stack.Navigator
         screenOptions={{ headerShown: false }}
-        initialRouteName="Splash"
+        initialRouteName="InterpreterJobListing"
       >
         {/* Entry Flow */}
         <Stack.Screen name="Splash" component={SplashScreen} />

@@ -1211,7 +1211,7 @@ const styles = StyleSheet.create({
     // Tips Section
     tipsSection: {
         paddingHorizontal: theme.spacing.md,
-        marginBottom: theme.spacing.xxl,
+        marginBottom: 170,
     },
     categoryTabs: {
         flexDirection: 'row',

@@ -19,6 +19,7 @@ import { theme, getHeaderHeight } from '../Components/theme';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
+
 // Tab Navigation Component
 const TabNavigation = ({ activeTab, onTabChange }) => {
     const tabs = [
@@ -554,14 +555,6 @@ const InterpreterJobListingScreen = ({ navigation }) => {
         }).start();
     }, []);
 
-    const handleBack = () => {
-        navigation.goBack();
-    };
-
-    const handleProfile = () => {
-        navigation.navigate('InterpreterProfile');
-    };
-
     const handleApplyToJob = (job) => {
         setSelectedJob(job);
         setShowApplyModal(true);
@@ -644,24 +637,21 @@ const InterpreterJobListingScreen = ({ navigation }) => {
     return (
         <View style={styles.container}>
             <DynamicHeader
-                type="back"
                 title="Job Opportunities"
-                onBack={handleBack}
-                showProfile={true}
-                onProfile={handleProfile}
+                onBack={() => navigation.goBack()}
             />
+            <View style={{ flex: 1, paddingTop: getHeaderHeight() }}>
+                <TabNavigation
+                    activeTab={activeTab}
+                    onTabChange={setActiveTab}
+                />
 
-            <TabNavigation
-                activeTab={activeTab}
-                onTabChange={setActiveTab}
-            />
+                <HelperText text={getHelperText()} />
 
-            <HelperText text={getHelperText()} />
-
-            <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-                {renderContent()}
-            </Animated.View>
-
+                <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+                    {renderContent()}
+                </Animated.View>
+            </View>
             <ApplyJobModal
                 visible={showApplyModal}
                 job={selectedJob}
@@ -677,6 +667,31 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: theme.colors.background,
+    },
+
+    // Header Styles
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: theme.spacing.md,
+        paddingTop: theme.spacing.xl,
+        paddingBottom: theme.spacing.md,
+        backgroundColor: theme.colors.surface,
+        borderBottomWidth: 1,
+        borderBottomColor: theme.colors.border,
+    },
+    headerLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    headerTitle: {
+        ...theme.typography.h3,
+        color: theme.colors.text.primary,
+        marginLeft: theme.spacing.sm,
+    },
+    headerButton: {
+        padding: theme.spacing.sm,
     },
 
     // Tab Navigation Styles

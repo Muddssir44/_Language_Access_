@@ -167,16 +167,16 @@ const DynamicHeader = ({
                             >
                                 <Feather name="chevron-left" size={24} color={iconColor} />
                             </TouchableOpacity>
-                            <View style={styles.titleContainer}>
-                                <Text style={[styles.headerTitleSecondary, { color: titleColor }]} numberOfLines={1}>
-                                    {title}
+                        </View>
+                        <View style={styles.centeredTitleContainer} pointerEvents="none">
+                            <Text style={[styles.headerTitleSecondary, styles.centeredTitleText, { color: titleColor }]} numberOfLines={1}>
+                                {title}
+                            </Text>
+                            {subtitle && (
+                                <Text style={[styles.headerSubtitleSecondary, styles.centeredSubtitleText, { color: titleColor }]} numberOfLines={1}>
+                                    {subtitle}
                                 </Text>
-                                {subtitle && (
-                                    <Text style={[styles.headerSubtitleSecondary, { color: titleColor }]} numberOfLines={1}>
-                                        {subtitle}
-                                    </Text>
-                                )}
-                            </View>
+                            )}
                         </View>
                         <View style={styles.headerActions}>
                             {showSearch && (
@@ -204,6 +204,15 @@ const DynamicHeader = ({
                                     activeOpacity={0.7}
                                 >
                                     <Feather name="bell" size={20} color={iconColor} />
+                                </TouchableOpacity>
+                            )}
+                            {showProfile && (
+                                <TouchableOpacity
+                                    style={styles.headerButton}
+                                    onPress={onProfile}
+                                    activeOpacity={0.7}
+                                >
+                                    <Feather name="user" size={20} color={iconColor} />
                                 </TouchableOpacity>
                             )}
                         </View>
@@ -327,16 +336,22 @@ const styles = StyleSheet.create({
         ...theme.typography.h2,
         color: theme.colors.text.primary,
         fontWeight: '700',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     headerSubtitle: {
         ...theme.typography.caption,
         color: theme.colors.text.secondary,
         marginTop: 2,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     headerTitleSecondary: {
         ...theme.typography.h3,
         color: theme.colors.text.primary,
         fontWeight: '600',
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     headerSubtitleSecondary: {
         ...theme.typography.caption,
@@ -368,6 +383,25 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         minWidth: 40,
         minHeight: 40,
+    },
+    centeredTitleContainer: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 0,
+        paddingHorizontal: 56, // enough space for back and right actions
+    },
+    centeredTitleText: {
+        textAlign: 'center',
+        width: '100%',
+    },
+    centeredSubtitleText: {
+        textAlign: 'center',
+        width: '100%',
     },
 });
 

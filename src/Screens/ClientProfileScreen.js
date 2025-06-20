@@ -217,7 +217,11 @@ const MyProfileScreen = ({ onBack }) => {
             />
 
             <Animated.ScrollView
-                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                style={{ flex: 1 }}
+                contentContainerStyle={{
+                    paddingHorizontal: theme.spacing.md,
+                    paddingTop: getHeaderHeight(),
+                }}
                 showsVerticalScrollIndicator={false}
                 scrollEventThrottle={16}
                 onScroll={Animated.event(
@@ -405,7 +409,11 @@ const ChangePasswordScreen = ({ onBack }) => {
             />
 
             <Animated.ScrollView
-                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                style={{ flex: 1 }}
+                contentContainerStyle={{
+                    paddingHorizontal: theme.spacing.md,
+                    paddingTop: getHeaderHeight(),
+                }}
                 showsVerticalScrollIndicator={false}
                 scrollEventThrottle={16}
                 onScroll={Animated.event(
@@ -618,6 +626,8 @@ const CardRegistrationScreen = ({ onBack }) => {
                     data={cards}
                     renderItem={renderCard}
                     keyExtractor={(item) => item.id}
+                    style={{ flex: 1 }}
+
                     scrollEventThrottle={16}
                     onScroll={Animated.event(
                         [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -829,7 +839,11 @@ const CallHistoryScreen = ({ onBack }) => {
                 data={callHistory}
                 renderItem={renderCallItem}
                 keyExtractor={(item) => item.id}
-                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                style={{ flex: 1 }}
+                contentContainerStyle={{
+                    paddingHorizontal: theme.spacing.md,
+                    paddingTop: getHeaderHeight(),
+                }}
                 scrollEventThrottle={16}
                 onScroll={Animated.event(
                     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -930,7 +944,11 @@ const PaymentHistoryScreen = ({ onBack }) => {
                 data={paymentHistory}
                 renderItem={renderPaymentItem}
                 keyExtractor={(item) => item.id}
-                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                style={{ flex: 1 }}
+                contentContainerStyle={{
+                    paddingHorizontal: theme.spacing.md,
+                    paddingTop: getHeaderHeight(),
+                }}
                 scrollEventThrottle={16}
                 onScroll={Animated.event(
                     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -1002,7 +1020,11 @@ const LanguageCoverageScreen = ({ onBack }) => {
                 data={languages}
                 renderItem={renderLanguageItem}
                 keyExtractor={(item) => item.id}
-                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                style={{ flex: 1 }}
+                contentContainerStyle={{
+                    paddingHorizontal: theme.spacing.md,
+                    paddingTop: getHeaderHeight(),
+                }}
                 scrollEventThrottle={16}
                 onScroll={Animated.event(
                     [{ nativeEvent: { contentOffset: { y: scrollY } } }],
@@ -1035,7 +1057,11 @@ const AboutScreen = ({ onBack }) => {
             />
 
             <Animated.ScrollView
-                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                style={{ flex: 1 }}
+                contentContainerStyle={{
+                    paddingHorizontal: theme.spacing.md,
+                    paddingTop: getHeaderHeight(),
+                }}
                 showsVerticalScrollIndicator={false}
                 scrollEventThrottle={16}
                 onScroll={Animated.event(
@@ -1104,7 +1130,11 @@ const TermsScreen = ({ onBack }) => {
             />
 
             <Animated.ScrollView
-                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                style={{ flex: 1 }}
+                contentContainerStyle={{
+                    paddingHorizontal: theme.spacing.md,
+                    paddingTop: getHeaderHeight(),
+                }}
                 showsVerticalScrollIndicator={false}
                 scrollEventThrottle={16}
                 onScroll={Animated.event(
@@ -1178,7 +1208,11 @@ const PrivacyPolicyScreen = ({ onBack }) => {
             />
 
             <Animated.ScrollView
-                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                style={{ flex: 1 }}
+                contentContainerStyle={{
+                    paddingHorizontal: theme.spacing.md,
+                    paddingTop: getHeaderHeight(),
+                }}
                 showsVerticalScrollIndicator={false}
                 scrollEventThrottle={16}
                 onScroll={Animated.event(
@@ -1265,7 +1299,11 @@ const ContactUsScreen = ({ onBack }) => {
             />
 
             <Animated.ScrollView
-                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                style={{ flex: 1 }}
+                contentContainerStyle={{
+                    paddingHorizontal: theme.spacing.md,
+                    paddingTop: getHeaderHeight(),
+                }}
                 showsVerticalScrollIndicator={false}
                 scrollEventThrottle={16}
                 onScroll={Animated.event(
@@ -1379,7 +1417,11 @@ const VersionScreen = ({ onBack }) => {
             />
 
             <Animated.ScrollView
-                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                style={{ flex: 1 }}
+                contentContainerStyle={{
+                    paddingHorizontal: theme.spacing.md,
+                    paddingTop: getHeaderHeight(),
+                }}
                 showsVerticalScrollIndicator={false}
                 scrollEventThrottle={16}
                 onScroll={Animated.event(
@@ -1675,7 +1717,11 @@ const MainProfileScreen = ({ onNavigate, onBack }) => {
             />
 
             <Animated.ScrollView
-                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                style={{ flex: 1 }}
+                contentContainerStyle={{
+                    paddingHorizontal: theme.spacing.md,
+                    paddingTop: getHeaderHeight(),
+                }}
                 showsVerticalScrollIndicator={false}
                 scrollEventThrottle={16}
                 onScroll={Animated.event(
@@ -2978,7 +3024,7 @@ const styles = StyleSheet.create({
 
     // Bottom Spacing
     bottomSpacing: {
-        height: theme.spacing.xl,
+        height: theme.spacing.xxxl,
     },
 
     // Enhanced User Profile Styles

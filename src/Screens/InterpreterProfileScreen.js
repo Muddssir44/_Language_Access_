@@ -229,7 +229,11 @@ const MainInterpreterProfileScreen = ({ onNavigate, onBack }) => {
             />
 
             <Animated.ScrollView
-                style={[styles.content, { paddingTop: getHeaderHeight() }]}
+                style={{ flex: 1 }}
+                contentContainerStyle={{
+                    paddingHorizontal: theme.spacing.md,
+                    paddingTop: getHeaderHeight(),
+                }}
                 showsVerticalScrollIndicator={false}
                 scrollEventThrottle={16}
                 onScroll={Animated.event(
@@ -530,8 +534,6 @@ const MainInterpreterProfileScreen = ({ onNavigate, onBack }) => {
                         iconColor={theme.colors.error}
                     />
                 </View>
-
-                <View style={styles.bottomSpacing} />
             </Animated.ScrollView>
         </Animated.View>
     );
@@ -568,11 +570,6 @@ const styles = StyleSheet.create({
         ...theme.typography.small,
         color: theme.colors.text.white,
         fontWeight: '600',
-    },
-
-    // Bottom Spacing
-    bottomSpacing: {
-        height: theme.spacing.xl,
     },
 
     // Enhanced Profile Header Styles
